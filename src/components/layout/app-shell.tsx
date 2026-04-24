@@ -6,7 +6,6 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/api-client";
-import { Button } from "@/components/ui/button";
 import { GlobalSearch } from "./global-search";
 
 interface MeResponse {
@@ -19,15 +18,38 @@ interface MeResponse {
   };
 }
 
-const NAV: { href: string; label: string; adminOnly?: boolean }[] = [
-  { href: "/dashboard", label: "Dashboard" },
-  { href: "/os", label: "Ordens de Serviço" },
-  { href: "/vendas", label: "Vendas" },
-  { href: "/clientes", label: "Clientes" },
-  { href: "/produtos", label: "Produtos" },
-  { href: "/usuarios", label: "Usuários", adminOnly: true },
-  { href: "/relatorios/vendas", label: "Relatórios", adminOnly: true },
+const NAV: {
+  href: string;
+  label: string;
+  icon: string;
+  adminOnly?: boolean;
+}[] = [
+  { href: "/dashboard", label: "Dashboard", icon: "◈" },
+  { href: "/os", label: "Ordens de Serviço", icon: "◎" },
+  { href: "/vendas", label: "Vendas", icon: "◇" },
+  { href: "/clientes", label: "Clientes", icon: "◉" },
+  { href: "/produtos", label: "Produtos", icon: "▣" },
+  { href: "/usuarios", label: "Usuários", icon: "◑", adminOnly: true },
+  {
+    href: "/relatorios/vendas",
+    label: "Relatórios",
+    icon: "◫",
+    adminOnly: true,
+  },
 ];
+
+function Initials({ nome }: { nome: string }) {
+  const parts = nome.trim().split(" ");
+  const init =
+    parts.length >= 2
+      ? parts[0][0] + parts[parts.length - 1][0]
+      : parts[0].slice(0, 2);
+  return (
+    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-(--accent) text-xs font-semibold text-white">
+      {init.toUpperCase()}
+    </span>
+  );
+}
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -54,17 +76,46 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const isAdmin = me?.role === "ADMIN";
 
   return (
-    <div className="flex min-h-screen">
-      <aside className="hidden w-60 shrink-0 border-r border-gray-200 bg-white lg:flex lg:flex-col">
-        <div className="border-b border-gray-200 p-4">
-          <p className="text-xs uppercase tracking-wide text-gray-400">
-            Empresa
-          </p>
-          <p className="text-sm font-semibold text-gray-900">
-            {me?.empresa.nome ?? "..."}
-          </p>
+    <div className="flex min-h-screen" style={{ background: "var(--body-bg)" }}>
+      {/* ── Sidebar ── */}
+      <aside
+        className="hidden w-56 shrink-0 flex-col lg:flex"
+        style={{
+          background: "var(--shell-bg)",
+          borderRight: "1px solid var(--shell-border)",
+        }}
+      >
+        {/* Logo / Empresa */}
+        <div
+          className="px-4 py-5"
+          style={{ borderBottom: "1px solid var(--shell-border)" }}
+        >
+          <div className="flex items-center gap-2.5">
+            <span
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-lg font-bold"
+              style={{ background: "var(--accent)", color: "#fff" }}
+            >
+              G
+            </span>
+            <div className="min-w-0">
+              <p
+                className="truncate text-xs font-semibold leading-none"
+                style={{ color: "var(--shell-text)" }}
+              >
+                {me?.empresa.nome ?? "Carregando…"}
+              </p>
+              <p
+                className="mt-0.5 text-[10px] uppercase tracking-widest"
+                style={{ color: "var(--shell-muted)" }}
+              >
+                Gestão
+              </p>
+            </div>
+          </div>
         </div>
-        <nav className="flex-1 space-y-1 p-2">
+
+        {/* Nav */}
+        <nav className="flex-1 space-y-0.5 px-2 py-3">
           {NAV.filter((n) => !n.adminOnly || isAdmin).map((n) => {
             const active =
               pathname === n.href || pathname.startsWith(n.href + "/");
@@ -73,36 +124,116 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 key={n.href}
                 href={n.href}
                 className={cn(
-                  "block rounded px-3 py-2 text-sm transition-colors",
-                  active
-                    ? "bg-blue-50 font-medium text-blue-700"
-                    : "text-gray-700 hover:bg-gray-100",
+                  "flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-all duration-150",
+                  active ? "font-semibold" : "font-normal hover:opacity-100",
                 )}
+                style={
+                  active
+                    ? {
+                        background: "var(--shell-active-bg)",
+                        color: "var(--shell-active)",
+                      }
+                    : {
+                        color: "var(--shell-muted)",
+                      }
+                }
+                onMouseEnter={(e) => {
+                  if (!active) {
+                    (e.currentTarget as HTMLElement).style.background =
+                      "var(--shell-hover-bg)";
+                    (e.currentTarget as HTMLElement).style.color =
+                      "var(--shell-text)";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!active) {
+                    (e.currentTarget as HTMLElement).style.background =
+                      "transparent";
+                    (e.currentTarget as HTMLElement).style.color =
+                      "var(--shell-muted)";
+                  }
+                }}
               >
+                <span className="w-4 shrink-0 text-center text-base leading-none">
+                  {n.icon}
+                </span>
                 {n.label}
               </Link>
             );
           })}
         </nav>
-        <div className="border-t border-gray-200 p-4 text-xs text-gray-500">
-          <p className="font-medium text-gray-700">{me?.nome}</p>
-          <p className="truncate">{me?.email}</p>
-          <p className="mt-1 uppercase text-gray-400">{me?.role}</p>
-          <Button
-            variant="outline"
-            size="sm"
-            className="mt-3 w-full"
-            onClick={logout}
-          >
-            Sair
-          </Button>
+
+        {/* User */}
+        <div
+          className="px-3 py-4"
+          style={{ borderTop: "1px solid var(--shell-border)" }}
+        >
+          {me ? (
+            <div className="flex items-center gap-2.5">
+              <Initials nome={me.nome} />
+              <div className="min-w-0 flex-1">
+                <p
+                  className="truncate text-xs font-semibold leading-tight"
+                  style={{ color: "var(--shell-text)" }}
+                >
+                  {me.nome}
+                </p>
+                <p
+                  className="truncate text-[10px]"
+                  style={{ color: "var(--shell-muted)" }}
+                >
+                  {me.role === "ADMIN" ? "Administrador" : "Operacional"}
+                </p>
+              </div>
+              <button
+                onClick={logout}
+                title="Sair"
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg transition-colors"
+                style={{ color: "var(--shell-muted)" }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLElement).style.background =
+                    "var(--shell-hover-bg)";
+                  (e.currentTarget as HTMLElement).style.color = "#ef4444";
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLElement).style.background =
+                    "transparent";
+                  (e.currentTarget as HTMLElement).style.color =
+                    "var(--shell-muted)";
+                }}
+              >
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                  <path
+                    d="M6 14H3a1 1 0 01-1-1V3a1 1 0 011-1h3M11 11l3-3-3-3M14 8H6"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </button>
+            </div>
+          ) : (
+            <div
+              className="h-8 animate-pulse rounded-lg"
+              style={{ background: "var(--shell-border)" }}
+            />
+          )}
         </div>
       </aside>
-      <main className="min-w-0 flex-1">
-        <header className="flex items-center gap-4 border-b border-gray-200 bg-white px-4 py-3 lg:px-6">
+
+      {/* ── Main ── */}
+      <main className="flex min-w-0 flex-1 flex-col">
+        <header
+          className="flex items-center gap-4 px-5 py-3"
+          style={{
+            background: "var(--shell-bg)",
+            borderBottom: "1px solid var(--shell-border)",
+          }}
+        >
           <GlobalSearch />
         </header>
-        <div className="p-4 lg:p-6">{children}</div>
+        <div className="flex-1 p-5 lg:p-7">{children}</div>
       </main>
     </div>
   );

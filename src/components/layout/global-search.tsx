@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Input } from "@/components/ui/input";
 import { api } from "@/lib/api-client";
 
 interface SearchResult {
@@ -57,21 +56,27 @@ export function GlobalSearch() {
 
   return (
     <div ref={ref} className="relative w-full max-w-md">
-      <Input
-        placeholder="Buscar clientes, produtos, OS..."
+      <input
+        placeholder="Buscar clientes, produtos, OS…"
         value={q}
         onChange={(e) => {
           setQ(e.target.value);
           setOpen(true);
         }}
         onFocus={() => setOpen(true)}
+        className="h-9 w-full rounded-lg px-3 text-sm outline-none transition"
+        style={{
+          background: "var(--shell-hover-bg)",
+          border: "1px solid var(--shell-border)",
+          color: "var(--shell-text)",
+        }}
       />
       {open && q.length >= 2 && (
-        <div className="absolute left-0 right-0 top-full z-30 mt-1 max-h-96 overflow-auto rounded-md border border-gray-200 bg-white shadow-lg">
+        <div className="absolute left-0 right-0 top-full z-30 mt-1 max-h-96 overflow-auto rounded-xl border border-(--border) bg-(--surface) shadow-[0_8px_32px_rgba(0,0,0,0.14)]">
           {!hasResults ? (
-            <p className="p-3 text-sm text-gray-500">Nenhum resultado.</p>
+            <p className="p-3 text-sm text-(--text-secondary)">Nenhum resultado.</p>
           ) : (
-            <div className="divide-y divide-gray-100 text-sm">
+            <div className="divide-y divide-(--border) text-sm">
               {results.clientes.length > 0 && (
                 <Section title="Clientes">
                   {results.clientes.map((c) => (
@@ -128,7 +133,7 @@ function Section({
 }) {
   return (
     <div className="py-1">
-      <p className="px-3 py-1 text-xs font-semibold uppercase tracking-wide text-gray-400">
+      <p className="px-3 py-1 text-xs font-semibold uppercase tracking-wider text-(--text-secondary)">
         {title}
       </p>
       {children}
@@ -151,10 +156,10 @@ function Item({
     <Link
       href={href}
       onClick={onClick}
-      className="flex items-center justify-between px-3 py-2 hover:bg-gray-50"
+      className="flex items-center justify-between px-3 py-2 text-(--text-primary) hover:bg-(--surface-raised)"
     >
       <span className="truncate">{label}</span>
-      {hint ? <span className="ml-2 text-xs text-gray-400">{hint}</span> : null}
+      {hint ? <span className="ml-2 text-xs text-(--text-secondary)">{hint}</span> : null}
     </Link>
   );
 }

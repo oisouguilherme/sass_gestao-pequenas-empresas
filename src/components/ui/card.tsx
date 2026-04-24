@@ -8,7 +8,7 @@ export function Card({
   return (
     <div
       className={cn(
-        "rounded-lg border border-gray-200 bg-white p-4 shadow-sm",
+        "rounded-xl border border-(--border) bg-(--surface) p-5 shadow-[0_1px_4px_rgba(0,0,0,0.06)]",
         className,
       )}
       {...rest}
@@ -26,14 +26,16 @@ export function PageHeader({
   actions?: React.ReactNode;
 }) {
   return (
-    <div className="mb-6 flex items-end justify-between gap-4">
+    <div className="mb-7 flex items-end justify-between gap-4">
       <div>
-        <h1 className="text-2xl font-semibold text-gray-900">{title}</h1>
+        <h1 className="text-[1.65rem] font-700 leading-tight text-(--text-primary) tracking-tight">
+          {title}
+        </h1>
         {description ? (
-          <p className="mt-1 text-sm text-gray-500">{description}</p>
+          <p className="mt-1 text-sm text-(--text-secondary)">{description}</p>
         ) : null}
       </div>
-      {actions ? <div className="flex gap-2">{actions}</div> : null}
+      {actions ? <div className="flex shrink-0 gap-2">{actions}</div> : null}
     </div>
   );
 }
@@ -46,17 +48,17 @@ export function Badge({
   tone?: "gray" | "blue" | "green" | "red" | "amber" | "purple";
 }) {
   const tones: Record<string, string> = {
-    gray: "bg-gray-100 text-gray-700",
-    blue: "bg-blue-100 text-blue-700",
-    green: "bg-green-100 text-green-700",
-    red: "bg-red-100 text-red-700",
-    amber: "bg-amber-100 text-amber-700",
-    purple: "bg-purple-100 text-purple-700",
+    gray:   "bg-stone-100 text-stone-700 border border-stone-200",
+    blue:   "bg-(--info-bg) text-(--info-text) border border-blue-200",
+    green:  "bg-(--success-bg) text-(--success-text) border border-green-200",
+    red:    "bg-(--danger-bg) text-(--danger-text) border border-red-200",
+    amber:  "bg-(--warning-bg) text-(--warning-text) border border-amber-200",
+    purple: "bg-(--purple-bg) text-(--purple-text) border border-purple-200",
   };
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium",
+        "inline-flex items-center rounded-md px-2 py-0.5 text-xs font-600 tracking-wide",
         tones[tone],
       )}
     >
@@ -73,10 +75,10 @@ export function EmptyState({
   description?: string;
 }) {
   return (
-    <div className="rounded-lg border border-dashed border-gray-300 bg-white p-8 text-center">
-      <p className="font-medium text-gray-700">{title}</p>
+    <div className="rounded-xl border-2 border-dashed border-(--border) bg-(--surface-raised) p-10 text-center">
+      <p className="font-600 text-(--text-secondary)">{title}</p>
       {description ? (
-        <p className="mt-1 text-sm text-gray-500">{description}</p>
+        <p className="mt-1 text-sm text-(--text-disabled)">{description}</p>
       ) : null}
     </div>
   );

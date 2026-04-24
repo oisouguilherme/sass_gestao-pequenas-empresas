@@ -5,17 +5,22 @@ type Variant = "primary" | "secondary" | "ghost" | "danger" | "outline";
 type Size = "sm" | "md" | "lg";
 
 const variantClasses: Record<Variant, string> = {
-  primary: "bg-blue-600 text-white hover:bg-blue-700 disabled:bg-blue-300",
-  secondary: "bg-gray-200 text-gray-900 hover:bg-gray-300 disabled:bg-gray-100",
-  ghost: "bg-transparent text-gray-700 hover:bg-gray-100",
-  danger: "bg-red-600 text-white hover:bg-red-700 disabled:bg-red-300",
-  outline: "border border-gray-300 bg-white text-gray-800 hover:bg-gray-50",
+  primary:
+    "bg-(--accent) text-white hover:bg-(--accent-hover) disabled:opacity-40 shadow-sm",
+  secondary:
+    "bg-(--surface-raised) text-(--text-primary) border border-(--border) hover:bg-(--border) disabled:opacity-40",
+  ghost:
+    "bg-transparent text-(--text-secondary) hover:bg-(--border) hover:text-(--text-primary)",
+  danger:
+    "bg-(--danger-bg) text-(--danger-text) border border-(--danger-text) hover:bg-red-100 disabled:opacity-40",
+  outline:
+    "border border-(--border-strong) bg-(--surface) text-(--text-primary) hover:border-(--text-secondary) hover:bg-(--surface-raised)",
 };
 
 const sizeClasses: Record<Size, string> = {
-  sm: "h-8 px-3 text-sm",
-  md: "h-10 px-4 text-sm",
-  lg: "h-12 px-6 text-base",
+  sm: "h-8 px-3 text-sm gap-1.5",
+  md: "h-9 px-4 text-sm",
+  lg: "h-11 px-5 text-base",
 };
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -26,22 +31,16 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
 
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   function Button(
-    {
-      variant = "primary",
-      size = "md",
-      className,
-      loading,
-      disabled,
-      children,
-      ...rest
-    },
+    { variant = "primary", size = "md", className, loading, disabled, children, ...rest },
     ref,
   ) {
     return (
       <button
         ref={ref}
         className={cn(
-          "inline-flex items-center justify-center gap-2 rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 disabled:cursor-not-allowed",
+          "inline-flex items-center justify-center gap-2 rounded-lg font-medium tracking-wide transition-all duration-150",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--accent-ring) focus-visible:ring-offset-1",
+          "disabled:cursor-not-allowed select-none",
           variantClasses[variant],
           sizeClasses[size],
           className,
@@ -49,7 +48,10 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         disabled={disabled || loading}
         {...rest}
       >
-        {loading ? "…" : children}
+        {loading ? (
+          <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+        ) : null}
+        {children}
       </button>
     );
   },

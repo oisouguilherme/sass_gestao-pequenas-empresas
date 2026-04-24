@@ -1,6 +1,13 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 
+const fieldBase =
+  "w-full rounded-lg border border-(--border) bg-(--surface) text-sm text-(--text-primary) " +
+  "placeholder:text-(--text-disabled) shadow-none " +
+  "transition-colors duration-150 " +
+  "focus:border-(--accent) focus:outline-none focus:ring-2 focus:ring-(--accent-ring) " +
+  "disabled:bg-(--surface-raised) disabled:text-(--text-disabled) disabled:cursor-not-allowed";
+
 export const Input = React.forwardRef<
   HTMLInputElement,
   React.InputHTMLAttributes<HTMLInputElement>
@@ -8,10 +15,7 @@ export const Input = React.forwardRef<
   return (
     <input
       ref={ref}
-      className={cn(
-        "h-10 w-full rounded-md border border-gray-300 bg-white px-3 text-sm shadow-sm placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-50",
-        className,
-      )}
+      className={cn("h-9 px-3", fieldBase, className)}
       {...rest}
     />
   );
@@ -24,10 +28,7 @@ export const Textarea = React.forwardRef<
   return (
     <textarea
       ref={ref}
-      className={cn(
-        "min-h-22 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500",
-        className,
-      )}
+      className={cn("min-h-22 px-3 py-2", fieldBase, className)}
       {...rest}
     />
   );
@@ -40,10 +41,7 @@ export const Select = React.forwardRef<
   return (
     <select
       ref={ref}
-      className={cn(
-        "h-10 w-full rounded-md border border-gray-300 bg-white px-3 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500",
-        className,
-      )}
+      className={cn("h-9 px-3 cursor-pointer", fieldBase, className)}
       {...rest}
     >
       {children}
@@ -57,7 +55,10 @@ export function Label({
 }: React.LabelHTMLAttributes<HTMLLabelElement>) {
   return (
     <label
-      className={cn("mb-1 block text-sm font-medium text-gray-700", className)}
+      className={cn(
+        "mb-1.5 block text-xs font-600 uppercase tracking-wider text-(--text-secondary)",
+        className,
+      )}
       {...rest}
     />
   );
@@ -81,9 +82,9 @@ export function Field({
       <Label htmlFor={htmlFor}>{label}</Label>
       {children}
       {error ? (
-        <p className="mt-1 text-xs text-red-600">{error}</p>
+        <p className="mt-1 text-xs text-(--danger-text)">{error}</p>
       ) : hint ? (
-        <p className="mt-1 text-xs text-gray-500">{hint}</p>
+        <p className="mt-1 text-xs text-(--text-disabled)">{hint}</p>
       ) : null}
     </div>
   );
