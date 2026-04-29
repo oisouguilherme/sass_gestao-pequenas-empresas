@@ -1,6 +1,11 @@
-import { z } from 'zod'
+import { z } from "zod";
 
-export const osStatusSchema = z.enum(['ABERTA', 'EM_ANDAMENTO', 'CONCLUIDA', 'CANCELADA'])
+export const osStatusSchema = z.enum([
+  "ABERTA",
+  "EM_ANDAMENTO",
+  "CONCLUIDA",
+  "CANCELADA",
+]);
 
 export const createOrderSchema = z.object({
   nome: z.string().trim().min(1),
@@ -16,22 +21,22 @@ export const createOrderSchema = z.object({
       }),
     )
     .optional(),
-})
+});
 
 export const updateOrderSchema = z.object({
   nome: z.string().trim().min(1).optional(),
   descricao: z.string().trim().nullable().optional(),
   deadlineAt: z.coerce.date().nullable().optional(),
   pago: z.boolean().optional(),
-})
+});
 
 export const updateStatusSchema = z.object({
   status: osStatusSchema,
-})
+});
 
 export const setUsuariosSchema = z.object({
   usuarioIds: z.array(z.string().min(1)),
-})
+});
 
 export const setProdutosSchema = z.object({
   produtos: z.array(
@@ -40,7 +45,7 @@ export const setProdutosSchema = z.object({
       quantidade: z.coerce.number().int().positive().default(1),
     }),
   ),
-})
+});
 
 export const listOrdersQuerySchema = z.object({
   page: z.coerce.number().int().positive().default(1),
@@ -49,8 +54,8 @@ export const listOrdersQuerySchema = z.object({
   status: osStatusSchema.optional(),
   usuarioId: z.string().optional(),
   deadlineAte: z.coerce.date().optional(),
-})
+});
 
-export type CreateOrderInput = z.infer<typeof createOrderSchema>
-export type UpdateOrderInput = z.infer<typeof updateOrderSchema>
-export type ListOrdersQuery = z.infer<typeof listOrdersQuerySchema>
+export type CreateOrderInput = z.infer<typeof createOrderSchema>;
+export type UpdateOrderInput = z.infer<typeof updateOrderSchema>;
+export type ListOrdersQuery = z.infer<typeof listOrdersQuerySchema>;

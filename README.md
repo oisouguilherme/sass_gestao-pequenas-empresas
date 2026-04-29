@@ -39,9 +39,9 @@ Backend sobe em `http://localhost:3333`. Verifique: `curl http://localhost:3333/
 
 #### Credenciais de seed
 
-| Role | E-mail | Senha |
-| --- | --- | --- |
-| ADMIN | `admin@demo.com` | `admin123` |
+| Role     | E-mail              | Senha         |
+| -------- | ------------------- | ------------- |
+| ADMIN    | `admin@demo.com`    | `admin123`    |
 | VENDEDOR | `vendedor@demo.com` | `vendedor123` |
 | OPERADOR | `operador@demo.com` | `operador123` |
 

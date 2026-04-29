@@ -1,24 +1,51 @@
+import { Routes, Route, Navigate } from "react-router-dom";
+import { AppLayout } from "@/components/layout/AppLayout";
+import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
+import LoginPage from "@/pages/Login";
+import DashboardPage from "@/pages/Dashboard";
+import ProductsPage from "@/pages/Products";
+import ClientsPage from "@/pages/Clients";
+import UsersPage from "@/pages/Users";
+import OrdersPage from "@/pages/Orders";
+import OrderDetailPage from "@/pages/OrderDetail";
+import SalesPage from "@/pages/Sales";
+import ReportsPage from "@/pages/Reports";
+
 export default function App() {
   return (
-    <main className="min-h-screen bg-slate-50 text-slate-900 flex items-center justify-center p-6">
-      <div className="max-w-md w-full rounded-2xl border border-slate-200 bg-white shadow-sm p-8 space-y-4">
-        <h1 className="text-2xl font-bold text-brand-600">SaaS Gestão</h1>
-        <p className="text-slate-600">
-          Bootstrap concluído. Tailwind v4 ativo. Próximas fases adicionarão autenticação, módulos
-          e telas de produto.
-        </p>
-        <div className="flex gap-2">
-          <span className="inline-flex items-center rounded-full bg-brand-50 text-brand-700 px-3 py-1 text-xs font-medium">
-            Vite
-          </span>
-          <span className="inline-flex items-center rounded-full bg-brand-50 text-brand-700 px-3 py-1 text-xs font-medium">
-            React 18
-          </span>
-          <span className="inline-flex items-center rounded-full bg-brand-50 text-brand-700 px-3 py-1 text-xs font-medium">
-            Tailwind v4
-          </span>
-        </div>
-      </div>
-    </main>
-  )
+    <Routes>
+      <Route path="/login" element={<LoginPage />} />
+      <Route
+        element={
+          <ProtectedRoute>
+            <AppLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<DashboardPage />} />
+        <Route path="products" element={<ProductsPage />} />
+        <Route path="clients" element={<ClientsPage />} />
+        <Route
+          path="users"
+          element={
+            <ProtectedRoute roles={["ADMIN"]}>
+              <UsersPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="orders" element={<OrdersPage />} />
+        <Route path="orders/:id" element={<OrderDetailPage />} />
+        <Route path="sales" element={<SalesPage />} />
+        <Route
+          path="reports"
+          element={
+            <ProtectedRoute roles={["ADMIN", "VENDEDOR"]}>
+              <ReportsPage />
+            </ProtectedRoute>
+          }
+        />
+      </Route>
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
 }

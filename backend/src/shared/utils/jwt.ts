@@ -1,33 +1,33 @@
-import jwt, { type SignOptions } from 'jsonwebtoken'
-import { env } from '../config/env.js'
+import jwt, { type SignOptions } from "jsonwebtoken";
+import { env } from "../config/env.js";
 
 export interface AccessTokenPayload {
-  sub: string // usuarioId
-  empresaId: string
-  role: 'ADMIN' | 'VENDEDOR' | 'OPERADOR'
+  sub: string; // usuarioId
+  empresaId: string;
+  role: "ADMIN" | "VENDEDOR" | "OPERADOR";
 }
 
 export interface RefreshTokenPayload {
-  sub: string
-  jti: string // refresh token id (para rotação/revogação)
+  sub: string;
+  jti: string; // refresh token id (para rotação/revogação)
 }
 
 export function signAccessToken(payload: AccessTokenPayload): string {
   return jwt.sign(payload, env.JWT_ACCESS_SECRET, {
     expiresIn: env.JWT_ACCESS_EXPIRES,
-  } as SignOptions)
+  } as SignOptions);
 }
 
 export function signRefreshToken(payload: RefreshTokenPayload): string {
   return jwt.sign(payload, env.JWT_REFRESH_SECRET, {
     expiresIn: env.JWT_REFRESH_EXPIRES,
-  } as SignOptions)
+  } as SignOptions);
 }
 
 export function verifyAccessToken(token: string): AccessTokenPayload {
-  return jwt.verify(token, env.JWT_ACCESS_SECRET) as AccessTokenPayload
+  return jwt.verify(token, env.JWT_ACCESS_SECRET) as AccessTokenPayload;
 }
 
 export function verifyRefreshToken(token: string): RefreshTokenPayload {
-  return jwt.verify(token, env.JWT_REFRESH_SECRET) as RefreshTokenPayload
+  return jwt.verify(token, env.JWT_REFRESH_SECRET) as RefreshTokenPayload;
 }
