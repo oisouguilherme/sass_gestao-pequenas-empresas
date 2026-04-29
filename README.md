@@ -72,6 +72,25 @@ npm run dev
 
 Frontend sobe em `http://localhost:5173`.
 
+#### Telas disponíveis
+
+| Rota            | Acesso              | Descrição                                                            |
+| --------------- | ------------------- | -------------------------------------------------------------------- |
+| `/login`        | público             | Login por e-mail e senha                                             |
+| `/`             | autenticado         | Dashboard com KPIs, OS recentes e ranking de vendas                  |
+| `/sales`        | autenticado         | **PDV** com leitor de código (autofocus), desconto e finalização    |
+| `/orders`       | autenticado         | Lista de OSs com filtros e criação; detalhe em abas (Dados/Usuários/Produtos/Status) |
+| `/products`     | autenticado         | CRUD de produtos                                                     |
+| `/clients`      | autenticado         | CRUD de clientes                                                     |
+| `/users`        | ADMIN               | CRUD de usuários e papel (ADMIN/VENDEDOR/OPERADOR)                   |
+| `/reports`      | ADMIN, VENDEDOR     | Relatório de vendas com filtros (período, usuário, status)            |
+
+#### Fluxo de autenticação
+
+- `accessToken` (15min) mantido **em memória** (nunca em `localStorage`).
+- `refreshToken` em cookie **httpOnly + SameSite + Secure** com path `/auth`, rotacionado a cada uso.
+- *Silent refresh* no boot da SPA + interceptor 401 → refresh automático → retry da request original.
+
 ## Estrutura
 
 ```
@@ -84,12 +103,10 @@ sass_gestao-pequenas-empresas/
 │       └── shared/    # config, middlewares, errors, utils, mail
 └── frontend/       # SPA Vite + React + Tailwind v4
     └── src/
-        ├── pages/
-        ├── components/
-        ├── services/
-        ├── hooks/
-        ├── contexts/
-        └── layouts/
+        ├── pages/        # Login, Dashboard, Products, Clients, Users, Orders, Sales (PDV), Reports
+        ├── components/   # ui/ + layout/
+        ├── contexts/     # AuthContext
+        └── lib/          # api (axios), format, types
 ```
 
 ## Roadmap (fases)
@@ -100,8 +117,19 @@ sass_gestao-pequenas-empresas/
 - ✅ **Fase 4** — CRUDs de domínio (Users, Products, Clients, Orders, Sales)
 - ✅ **Fase 5** — Serviço de e-mail (Nodemailer + Ethereal em dev)
 - ✅ **Fase 6** — Relatórios
-- ⏳ **Fase 7** — Frontend completo (telas)
-- ⏳ **Fase 8** — Polimento final + auditoria de segurança
+- ✅ **Fase 7** — Frontend completo (Login, Dashboard, PDV, OS, Produtos, Clientes, Usuários, Relatórios)
+- ✅ **Fase 8** — Polimento + auditoria de segurança
+
+## Segurança
+
+- **Helmet** + `x-powered-by` desabilitado
+- **CORS** restrito a `CORS_ORIGIN` com `credentials: true`
+- **Rate limit** global (600 req / 15min) e mais agressivo no `/auth/login` (20 / 15min)
+- **Senhas** com `bcryptjs` (10 rounds)
+- **JWT**: access curto em memória, refresh httpOnly com **rotação** e revogação em DB (`sha256` no armazenamento)
+- **Multi-tenant**: `empresaId` sempre vindo do token JWT — jamais do payload
+- **Validação** com Zod em **todos** os endpoints
+- **Erros padronizados** via `AppError` + handler global (mapeia Zod, Prisma P2002→409, P2025→404)
 
 ## Convenções
 

@@ -3,6 +3,7 @@ import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
 import cookieParser from "cookie-parser";
+import rateLimit from "express-rate-limit";
 import { env } from "./shared/config/env.js";
 import { errorHandler } from "./shared/middlewares/errorHandler.js";
 import authRoutes from "./modules/auth/auth.routes.js";
@@ -17,6 +18,7 @@ export function createApp(): Express {
   const app = express();
 
   app.set("trust proxy", 1);
+  app.disable("x-powered-by");
 
   app.use(helmet());
   app.use(
@@ -28,6 +30,16 @@ export function createApp(): Express {
   app.use(express.json({ limit: "1mb" }));
   app.use(cookieParser());
   app.use(morgan(env.NODE_ENV === "production" ? "combined" : "dev"));
+
+  // Rate limit global modesto para mitigar abusos
+  const globalLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 600,
+    standardHeaders: true,
+    legacyHeaders: false,
+    skip: (req) => req.path === "/health",
+  });
+  app.use(globalLimiter);
 
   app.get("/health", (_req: Request, res: Response) => {
     res.json({
