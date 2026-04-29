@@ -1,5 +1,5 @@
-import { useState, type ReactNode } from 'react'
-import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { useState, type ReactNode } from "react";
+import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   Package,
@@ -11,66 +11,70 @@ import {
   LogOut,
   Menu,
   X,
-} from 'lucide-react'
-import { useAuth } from '@/contexts/AuthContext'
-import type { Role } from '@/lib/types'
+} from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import type { Role } from "@/lib/types";
 
 interface NavItem {
-  to: string
-  label: string
-  icon: ReactNode
-  roles?: Role[]
+  to: string;
+  label: string;
+  icon: ReactNode;
+  roles?: Role[];
 }
 
 const NAV: NavItem[] = [
-  { to: '/', label: 'Dashboard', icon: <LayoutDashboard className="h-4 w-4" /> },
   {
-    to: '/sales',
-    label: 'PDV',
+    to: "/",
+    label: "Dashboard",
+    icon: <LayoutDashboard className="h-4 w-4" />,
+  },
+  {
+    to: "/sales",
+    label: "PDV",
     icon: <ScanBarcode className="h-4 w-4" />,
   },
   {
-    to: '/orders',
-    label: 'Ordens de Serviço',
+    to: "/orders",
+    label: "Ordens de Serviço",
     icon: <ClipboardList className="h-4 w-4" />,
   },
   {
-    to: '/products',
-    label: 'Produtos',
+    to: "/products",
+    label: "Produtos",
     icon: <Package className="h-4 w-4" />,
   },
   {
-    to: '/clients',
-    label: 'Clientes',
+    to: "/clients",
+    label: "Clientes",
     icon: <Users className="h-4 w-4" />,
   },
   {
-    to: '/users',
-    label: 'Usuários',
+    to: "/users",
+    label: "Usuários",
     icon: <UserCog className="h-4 w-4" />,
-    roles: ['ADMIN'],
+    roles: ["ADMIN"],
   },
   {
-    to: '/reports',
-    label: 'Relatórios',
+    to: "/reports",
+    label: "Relatórios",
     icon: <BarChart3 className="h-4 w-4" />,
-    roles: ['ADMIN', 'VENDEDOR'],
+    roles: ["ADMIN", "VENDEDOR"],
   },
-]
+];
 
 export function AppLayout() {
-  const { user, logout } = useAuth()
-  const navigate = useNavigate()
-  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const handleLogout = async () => {
-    await logout()
-    navigate('/login', { replace: true })
-  }
+    await logout();
+    navigate("/login", { replace: true });
+  };
 
   const items = NAV.filter(
     (i) => !i.roles || (user && i.roles.includes(user.role)),
-  )
+  );
 
   return (
     <div className="flex min-h-screen bg-slate-50">
@@ -83,7 +87,7 @@ export function AppLayout() {
       )}
       <aside
         className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-slate-200 bg-white transition-transform lg:static lg:translate-x-0 ${
-          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+          sidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
         <div className="flex h-16 items-center justify-between border-b border-slate-200 px-6">
@@ -101,13 +105,13 @@ export function AppLayout() {
             <NavLink
               key={item.to}
               to={item.to}
-              end={item.to === '/'}
+              end={item.to === "/"}
               onClick={() => setSidebarOpen(false)}
               className={({ isActive }) =>
                 `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition ${
                   isActive
-                    ? 'bg-brand-50 text-brand-700'
-                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                    ? "bg-brand-50 text-brand-700"
+                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                 }`
               }
             >
@@ -156,5 +160,5 @@ export function AppLayout() {
         </main>
       </div>
     </div>
-  )
+  );
 }

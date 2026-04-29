@@ -1,56 +1,56 @@
-import { useState, type FormEvent } from 'react'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Plus, Pencil, Trash2 } from 'lucide-react'
-import { toast } from 'sonner'
-import { api, extractErrorMessage } from '@/lib/api'
-import type { Cliente, Paginated } from '@/lib/types'
-import { useAuth } from '@/contexts/AuthContext'
-import { PageHeader } from '@/components/ui/PageHeader'
-import { Button } from '@/components/ui/Button'
-import { Input } from '@/components/ui/Input'
-import { Modal } from '@/components/ui/Modal'
-import { Textarea } from '@/components/ui/Textarea'
-import { DataTable, Pagination } from '@/components/ui/DataTable'
-import { SearchInput } from '@/components/ui/SearchInput'
+import { useState, type FormEvent } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Plus, Pencil, Trash2 } from "lucide-react";
+import { toast } from "sonner";
+import { api, extractErrorMessage } from "@/lib/api";
+import type { Cliente, Paginated } from "@/lib/types";
+import { useAuth } from "@/contexts/AuthContext";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { Modal } from "@/components/ui/Modal";
+import { Textarea } from "@/components/ui/Textarea";
+import { DataTable, Pagination } from "@/components/ui/DataTable";
+import { SearchInput } from "@/components/ui/SearchInput";
 
 interface ClientForm {
-  nome: string
-  email: string
-  telefone: string
-  documento: string
-  endereco: string
+  nome: string;
+  email: string;
+  telefone: string;
+  documento: string;
+  endereco: string;
 }
 
 const empty: ClientForm = {
-  nome: '',
-  email: '',
-  telefone: '',
-  documento: '',
-  endereco: '',
-}
+  nome: "",
+  email: "",
+  telefone: "",
+  documento: "",
+  endereco: "",
+};
 
 export default function ClientsPage() {
-  const { user } = useAuth()
-  const qc = useQueryClient()
-  const canDelete = user?.role === 'ADMIN'
+  const { user } = useAuth();
+  const qc = useQueryClient();
+  const canDelete = user?.role === "ADMIN";
 
-  const [page, setPage] = useState(1)
-  const [search, setSearch] = useState('')
-  const [modalOpen, setModalOpen] = useState(false)
-  const [editing, setEditing] = useState<Cliente | null>(null)
-  const [form, setForm] = useState<ClientForm>(empty)
+  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState("");
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editing, setEditing] = useState<Cliente | null>(null);
+  const [form, setForm] = useState<ClientForm>(empty);
 
   const clientsQ = useQuery({
-    queryKey: ['clients', page, search],
+    queryKey: ["clients", page, search],
     queryFn: async () => {
       const params = new URLSearchParams({
         page: String(page),
-        perPage: '10',
-      })
-      if (search) params.set('q', search)
-      return (await api.get<Paginated<Cliente>>(`/clients?${params}`)).data
+        perPage: "10",
+      });
+      if (search) params.set("q", search);
+      return (await api.get<Paginated<Cliente>>(`/clients?${params}`)).data;
     },
-  })
+  });
 
   function payload(data: ClientForm) {
     return {
@@ -59,68 +59,68 @@ export default function ClientsPage() {
       telefone: data.telefone || undefined,
       documento: data.documento || undefined,
       endereco: data.endereco || undefined,
-    }
+    };
   }
 
   const createMut = useMutation({
-    mutationFn: async (data: ClientForm) => api.post('/clients', payload(data)),
+    mutationFn: async (data: ClientForm) => api.post("/clients", payload(data)),
     onSuccess: () => {
-      toast.success('Cliente criado')
-      qc.invalidateQueries({ queryKey: ['clients'] })
-      closeModal()
+      toast.success("Cliente criado");
+      qc.invalidateQueries({ queryKey: ["clients"] });
+      closeModal();
     },
     onError: (e) => toast.error(extractErrorMessage(e)),
-  })
+  });
 
   const updateMut = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: ClientForm }) =>
       api.patch(`/clients/${id}`, payload(data)),
     onSuccess: () => {
-      toast.success('Cliente atualizado')
-      qc.invalidateQueries({ queryKey: ['clients'] })
-      closeModal()
+      toast.success("Cliente atualizado");
+      qc.invalidateQueries({ queryKey: ["clients"] });
+      closeModal();
     },
     onError: (e) => toast.error(extractErrorMessage(e)),
-  })
+  });
 
   const deleteMut = useMutation({
     mutationFn: async (id: string) => api.delete(`/clients/${id}`),
     onSuccess: () => {
-      toast.success('Cliente removido')
-      qc.invalidateQueries({ queryKey: ['clients'] })
+      toast.success("Cliente removido");
+      qc.invalidateQueries({ queryKey: ["clients"] });
     },
     onError: (e) => toast.error(extractErrorMessage(e)),
-  })
+  });
 
   const openCreate = () => {
-    setEditing(null)
-    setForm(empty)
-    setModalOpen(true)
-  }
+    setEditing(null);
+    setForm(empty);
+    setModalOpen(true);
+  };
 
   const openEdit = (c: Cliente) => {
-    setEditing(c)
+    setEditing(c);
     setForm({
       nome: c.nome,
-      email: c.email ?? '',
-      telefone: c.telefone ?? '',
-      documento: c.documento ?? '',
-      endereco: c.endereco ?? '',
-    })
-    setModalOpen(true)
-  }
+      email: c.email ?? "",
+      telefone: c.telefone ?? "",
+      documento: c.documento ?? "",
+      endereco: c.endereco ?? "",
+    });
+    setModalOpen(true);
+  };
 
   const closeModal = () => {
-    setModalOpen(false)
-    setEditing(null)
-    setForm(empty)
-  }
+    setModalOpen(false);
+    setEditing(null);
+    setForm(empty);
+  };
 
   const onSubmit = (e: FormEvent) => {
-    e.preventDefault()
-    if (editing) updateMut.mutate({ id: editing.id, data: form })
-    else createMut.mutate(form)
-  }
+    e.preventDefault();
+    if (editing) updateMut.mutate({ id: editing.id, data: form });
+    else createMut.mutate(form);
+  };
 
   return (
     <>
@@ -138,8 +138,8 @@ export default function ClientsPage() {
         <SearchInput
           value={search}
           onChange={(v) => {
-            setPage(1)
-            setSearch(v)
+            setPage(1);
+            setSearch(v);
           }}
           placeholder="Buscar por nome, e-mail ou documento…"
         />
@@ -150,22 +150,22 @@ export default function ClientsPage() {
         rows={clientsQ.data?.data ?? []}
         rowKey={(c) => c.id}
         columns={[
-          { key: 'nome', header: 'Nome' },
-          { key: 'email', header: 'E-mail', render: (c) => c.email ?? '—' },
+          { key: "nome", header: "Nome" },
+          { key: "email", header: "E-mail", render: (c) => c.email ?? "—" },
           {
-            key: 'telefone',
-            header: 'Telefone',
-            render: (c) => c.telefone ?? '—',
+            key: "telefone",
+            header: "Telefone",
+            render: (c) => c.telefone ?? "—",
           },
           {
-            key: 'documento',
-            header: 'Documento',
-            render: (c) => c.documento ?? '—',
+            key: "documento",
+            header: "Documento",
+            render: (c) => c.documento ?? "—",
           },
           {
-            key: 'acoes',
-            header: '',
-            className: 'text-right',
+            key: "acoes",
+            header: "",
+            className: "text-right",
             render: (c) => (
               <div className="flex justify-end gap-1">
                 <Button
@@ -181,7 +181,8 @@ export default function ClientsPage() {
                     size="sm"
                     variant="ghost"
                     onClick={() => {
-                      if (confirm(`Remover "${c.nome}"?`)) deleteMut.mutate(c.id)
+                      if (confirm(`Remover "${c.nome}"?`))
+                        deleteMut.mutate(c.id);
                     }}
                     aria-label="Remover"
                   >
@@ -207,7 +208,7 @@ export default function ClientsPage() {
       <Modal
         open={modalOpen}
         onClose={closeModal}
-        title={editing ? 'Editar cliente' : 'Novo cliente'}
+        title={editing ? "Editar cliente" : "Novo cliente"}
         size="lg"
         footer={
           <>
@@ -218,12 +219,15 @@ export default function ClientsPage() {
               onClick={onSubmit as unknown as () => void}
               loading={createMut.isPending || updateMut.isPending}
             >
-              {editing ? 'Salvar' : 'Criar'}
+              {editing ? "Salvar" : "Criar"}
             </Button>
           </>
         }
       >
-        <form onSubmit={onSubmit} className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <form
+          onSubmit={onSubmit}
+          className="grid grid-cols-1 gap-4 sm:grid-cols-2"
+        >
           <Input
             label="Nome"
             required
@@ -259,5 +263,5 @@ export default function ClientsPage() {
         </form>
       </Modal>
     </>
-  )
+  );
 }

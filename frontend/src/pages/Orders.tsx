@@ -1,90 +1,93 @@
-import { useState, type FormEvent } from 'react'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Plus } from 'lucide-react'
-import { toast } from 'sonner'
-import { Link } from 'react-router-dom'
-import { api, extractErrorMessage } from '@/lib/api'
-import type { OrdemServico, OSStatus, Paginated, Usuario } from '@/lib/types'
-import { PageHeader } from '@/components/ui/PageHeader'
-import { Button } from '@/components/ui/Button'
-import { Input } from '@/components/ui/Input'
-import { Select } from '@/components/ui/Select'
-import { Modal } from '@/components/ui/Modal'
-import { Textarea } from '@/components/ui/Textarea'
-import { Badge } from '@/components/ui/Badge'
-import { DataTable, Pagination } from '@/components/ui/DataTable'
-import { SearchInput } from '@/components/ui/SearchInput'
-import { formatDate } from '@/lib/format'
+import { useState, type FormEvent } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Plus } from "lucide-react";
+import { toast } from "sonner";
+import { Link } from "react-router-dom";
+import { api, extractErrorMessage } from "@/lib/api";
+import type { OrdemServico, OSStatus, Paginated, Usuario } from "@/lib/types";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { Select } from "@/components/ui/Select";
+import { Modal } from "@/components/ui/Modal";
+import { Textarea } from "@/components/ui/Textarea";
+import { Badge } from "@/components/ui/Badge";
+import { DataTable, Pagination } from "@/components/ui/DataTable";
+import { SearchInput } from "@/components/ui/SearchInput";
+import { formatDate } from "@/lib/format";
 
-const STATUS_LABEL: Record<OSStatus, { tone: 'info' | 'warning' | 'success' | 'danger'; label: string }> = {
-  ABERTA: { tone: 'info', label: 'Aberta' },
-  EM_ANDAMENTO: { tone: 'warning', label: 'Em andamento' },
-  CONCLUIDA: { tone: 'success', label: 'Concluída' },
-  CANCELADA: { tone: 'danger', label: 'Cancelada' },
-}
+const STATUS_LABEL: Record<
+  OSStatus,
+  { tone: "info" | "warning" | "success" | "danger"; label: string }
+> = {
+  ABERTA: { tone: "info", label: "Aberta" },
+  EM_ANDAMENTO: { tone: "warning", label: "Em andamento" },
+  CONCLUIDA: { tone: "success", label: "Concluída" },
+  CANCELADA: { tone: "danger", label: "Cancelada" },
+};
 
 interface OrderForm {
-  nome: string
-  descricao: string
-  deadlineAt: string
-  usuarioIds: string[]
+  nome: string;
+  descricao: string;
+  deadlineAt: string;
+  usuarioIds: string[];
 }
 
 const empty: OrderForm = {
-  nome: '',
-  descricao: '',
-  deadlineAt: '',
+  nome: "",
+  descricao: "",
+  deadlineAt: "",
   usuarioIds: [],
-}
+};
 
 export default function OrdersPage() {
-  const qc = useQueryClient()
-  const [page, setPage] = useState(1)
-  const [search, setSearch] = useState('')
-  const [statusFilter, setStatusFilter] = useState<OSStatus | ''>('')
-  const [modalOpen, setModalOpen] = useState(false)
-  const [form, setForm] = useState<OrderForm>(empty)
+  const qc = useQueryClient();
+  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<OSStatus | "">("");
+  const [modalOpen, setModalOpen] = useState(false);
+  const [form, setForm] = useState<OrderForm>(empty);
 
   const ordersQ = useQuery({
-    queryKey: ['orders', page, search, statusFilter],
+    queryKey: ["orders", page, search, statusFilter],
     queryFn: async () => {
       const params = new URLSearchParams({
         page: String(page),
-        perPage: '10',
-      })
-      if (search) params.set('q', search)
-      if (statusFilter) params.set('status', statusFilter)
-      return (await api.get<Paginated<OrdemServico>>(`/orders?${params}`)).data
+        perPage: "10",
+      });
+      if (search) params.set("q", search);
+      if (statusFilter) params.set("status", statusFilter);
+      return (await api.get<Paginated<OrdemServico>>(`/orders?${params}`)).data;
     },
-  })
+  });
 
   const usersQ = useQuery({
-    queryKey: ['users', 'all'],
+    queryKey: ["users", "all"],
     queryFn: async () =>
-      (await api.get<Paginated<Usuario>>('/users?perPage=100')).data,
-  })
+      (await api.get<Paginated<Usuario>>("/users?perPage=100")).data,
+  });
 
   const createMut = useMutation({
     mutationFn: async (data: OrderForm) =>
-      api.post('/orders', {
+      api.post("/orders", {
         nome: data.nome,
         descricao: data.descricao || undefined,
         deadlineAt: data.deadlineAt || undefined,
         usuarioIds: data.usuarioIds.length ? data.usuarioIds : undefined,
       }),
     onSuccess: () => {
-      toast.success('OS criada')
-      qc.invalidateQueries({ queryKey: ['orders'] })
-      setModalOpen(false)
-      setForm(empty)
+      toast.success("OS criada");
+      qc.invalidateQueries({ queryKey: ["orders"] });
+      setModalOpen(false);
+      setForm(empty);
     },
     onError: (e) => toast.error(extractErrorMessage(e)),
-  })
+  });
 
   const onSubmit = (e: FormEvent) => {
-    e.preventDefault()
-    createMut.mutate(form)
-  }
+    e.preventDefault();
+    createMut.mutate(form);
+  };
 
   const toggleUser = (id: string) => {
     setForm((f) => ({
@@ -92,8 +95,8 @@ export default function OrdersPage() {
       usuarioIds: f.usuarioIds.includes(id)
         ? f.usuarioIds.filter((u) => u !== id)
         : [...f.usuarioIds, id],
-    }))
-  }
+    }));
+  };
 
   return (
     <>
@@ -112,8 +115,8 @@ export default function OrdersPage() {
           <SearchInput
             value={search}
             onChange={(v) => {
-              setPage(1)
-              setSearch(v)
+              setPage(1);
+              setSearch(v);
             }}
             placeholder="Buscar por nome…"
           />
@@ -121,8 +124,8 @@ export default function OrdersPage() {
         <Select
           value={statusFilter}
           onChange={(e) => {
-            setPage(1)
-            setStatusFilter(e.target.value as OSStatus | '')
+            setPage(1);
+            setStatusFilter(e.target.value as OSStatus | "");
           }}
         >
           <option value="">Todos os status</option>
@@ -139,8 +142,8 @@ export default function OrdersPage() {
         rowKey={(o) => o.id}
         columns={[
           {
-            key: 'nome',
-            header: 'OS',
+            key: "nome",
+            header: "OS",
             render: (o) => (
               <Link
                 to={`/orders/${o.id}`}
@@ -151,8 +154,8 @@ export default function OrdersPage() {
             ),
           },
           {
-            key: 'status',
-            header: 'Status',
+            key: "status",
+            header: "Status",
             render: (o) => (
               <Badge tone={STATUS_LABEL[o.status].tone}>
                 {STATUS_LABEL[o.status].label}
@@ -160,21 +163,21 @@ export default function OrdersPage() {
             ),
           },
           {
-            key: 'responsaveis',
-            header: 'Responsáveis',
+            key: "responsaveis",
+            header: "Responsáveis",
             render: (o) =>
               o.usuarios.length > 0
-                ? o.usuarios.map((u) => u.usuario.nome).join(', ')
-                : '—',
+                ? o.usuarios.map((u) => u.usuario.nome).join(", ")
+                : "—",
           },
           {
-            key: 'deadline',
-            header: 'Prazo',
+            key: "deadline",
+            header: "Prazo",
             render: (o) => formatDate(o.deadlineAt),
           },
           {
-            key: 'pago',
-            header: 'Pago',
+            key: "pago",
+            header: "Pago",
             render: (o) =>
               o.pago ? (
                 <Badge tone="success">Sim</Badge>
@@ -198,8 +201,8 @@ export default function OrdersPage() {
       <Modal
         open={modalOpen}
         onClose={() => {
-          setModalOpen(false)
-          setForm(empty)
+          setModalOpen(false);
+          setForm(empty);
         }}
         title="Nova ordem de serviço"
         size="lg"
@@ -208,8 +211,8 @@ export default function OrdersPage() {
             <Button
               variant="outline"
               onClick={() => {
-                setModalOpen(false)
-                setForm(empty)
+                setModalOpen(false);
+                setForm(empty);
               }}
             >
               Cancelar
@@ -271,5 +274,5 @@ export default function OrdersPage() {
         </form>
       </Modal>
     </>
-  )
+  );
 }

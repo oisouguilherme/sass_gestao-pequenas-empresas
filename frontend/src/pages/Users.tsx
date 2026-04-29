@@ -1,76 +1,76 @@
-import { useState, type FormEvent } from 'react'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Plus, Pencil, Trash2 } from 'lucide-react'
-import { toast } from 'sonner'
-import { api, extractErrorMessage } from '@/lib/api'
-import type { Paginated, Role, Usuario } from '@/lib/types'
-import { useAuth } from '@/contexts/AuthContext'
-import { PageHeader } from '@/components/ui/PageHeader'
-import { Button } from '@/components/ui/Button'
-import { Input } from '@/components/ui/Input'
-import { Select } from '@/components/ui/Select'
-import { Modal } from '@/components/ui/Modal'
-import { Badge } from '@/components/ui/Badge'
-import { DataTable, Pagination } from '@/components/ui/DataTable'
-import { SearchInput } from '@/components/ui/SearchInput'
+import { useState, type FormEvent } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Plus, Pencil, Trash2 } from "lucide-react";
+import { toast } from "sonner";
+import { api, extractErrorMessage } from "@/lib/api";
+import type { Paginated, Role, Usuario } from "@/lib/types";
+import { useAuth } from "@/contexts/AuthContext";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { Select } from "@/components/ui/Select";
+import { Modal } from "@/components/ui/Modal";
+import { Badge } from "@/components/ui/Badge";
+import { DataTable, Pagination } from "@/components/ui/DataTable";
+import { SearchInput } from "@/components/ui/SearchInput";
 
 interface UserForm {
-  nome: string
-  email: string
-  senha: string
-  telefone: string
-  role: Role
+  nome: string;
+  email: string;
+  senha: string;
+  telefone: string;
+  role: Role;
 }
 
 const empty: UserForm = {
-  nome: '',
-  email: '',
-  senha: '',
-  telefone: '',
-  role: 'OPERADOR',
-}
+  nome: "",
+  email: "",
+  senha: "",
+  telefone: "",
+  role: "OPERADOR",
+};
 
-const ROLE_TONE: Record<Role, 'brand' | 'info' | 'neutral'> = {
-  ADMIN: 'brand',
-  VENDEDOR: 'info',
-  OPERADOR: 'neutral',
-}
+const ROLE_TONE: Record<Role, "brand" | "info" | "neutral"> = {
+  ADMIN: "brand",
+  VENDEDOR: "info",
+  OPERADOR: "neutral",
+};
 
 export default function UsersPage() {
-  const { user: me } = useAuth()
-  const qc = useQueryClient()
+  const { user: me } = useAuth();
+  const qc = useQueryClient();
 
-  const [page, setPage] = useState(1)
-  const [search, setSearch] = useState('')
-  const [modalOpen, setModalOpen] = useState(false)
-  const [editing, setEditing] = useState<Usuario | null>(null)
-  const [form, setForm] = useState<UserForm>(empty)
+  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState("");
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editing, setEditing] = useState<Usuario | null>(null);
+  const [form, setForm] = useState<UserForm>(empty);
 
   const usersQ = useQuery({
-    queryKey: ['users', page, search],
+    queryKey: ["users", page, search],
     queryFn: async () => {
       const params = new URLSearchParams({
         page: String(page),
-        perPage: '10',
-      })
-      if (search) params.set('q', search)
-      return (await api.get<Paginated<Usuario>>(`/users?${params}`)).data
+        perPage: "10",
+      });
+      if (search) params.set("q", search);
+      return (await api.get<Paginated<Usuario>>(`/users?${params}`)).data;
     },
-  })
+  });
 
   const createMut = useMutation({
     mutationFn: async (data: UserForm) =>
-      api.post('/users', {
+      api.post("/users", {
         ...data,
         telefone: data.telefone || undefined,
       }),
     onSuccess: () => {
-      toast.success('Usuário criado')
-      qc.invalidateQueries({ queryKey: ['users'] })
-      closeModal()
+      toast.success("Usuário criado");
+      qc.invalidateQueries({ queryKey: ["users"] });
+      closeModal();
     },
     onError: (e) => toast.error(extractErrorMessage(e)),
-  })
+  });
 
   const updateMut = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: UserForm }) => {
@@ -79,56 +79,56 @@ export default function UsersPage() {
         email: data.email,
         role: data.role,
         telefone: data.telefone || null,
-      }
-      if (data.senha) body.senha = data.senha
-      return api.patch(`/users/${id}`, body)
+      };
+      if (data.senha) body.senha = data.senha;
+      return api.patch(`/users/${id}`, body);
     },
     onSuccess: () => {
-      toast.success('Usuário atualizado')
-      qc.invalidateQueries({ queryKey: ['users'] })
-      closeModal()
+      toast.success("Usuário atualizado");
+      qc.invalidateQueries({ queryKey: ["users"] });
+      closeModal();
     },
     onError: (e) => toast.error(extractErrorMessage(e)),
-  })
+  });
 
   const deleteMut = useMutation({
     mutationFn: async (id: string) => api.delete(`/users/${id}`),
     onSuccess: () => {
-      toast.success('Usuário removido')
-      qc.invalidateQueries({ queryKey: ['users'] })
+      toast.success("Usuário removido");
+      qc.invalidateQueries({ queryKey: ["users"] });
     },
     onError: (e) => toast.error(extractErrorMessage(e)),
-  })
+  });
 
   const openCreate = () => {
-    setEditing(null)
-    setForm(empty)
-    setModalOpen(true)
-  }
+    setEditing(null);
+    setForm(empty);
+    setModalOpen(true);
+  };
 
   const openEdit = (u: Usuario) => {
-    setEditing(u)
+    setEditing(u);
     setForm({
       nome: u.nome,
       email: u.email,
-      senha: '',
-      telefone: u.telefone ?? '',
+      senha: "",
+      telefone: u.telefone ?? "",
       role: u.role,
-    })
-    setModalOpen(true)
-  }
+    });
+    setModalOpen(true);
+  };
 
   const closeModal = () => {
-    setModalOpen(false)
-    setEditing(null)
-    setForm(empty)
-  }
+    setModalOpen(false);
+    setEditing(null);
+    setForm(empty);
+  };
 
   const onSubmit = (e: FormEvent) => {
-    e.preventDefault()
-    if (editing) updateMut.mutate({ id: editing.id, data: form })
-    else createMut.mutate(form)
-  }
+    e.preventDefault();
+    if (editing) updateMut.mutate({ id: editing.id, data: form });
+    else createMut.mutate(form);
+  };
 
   return (
     <>
@@ -146,8 +146,8 @@ export default function UsersPage() {
         <SearchInput
           value={search}
           onChange={(v) => {
-            setPage(1)
-            setSearch(v)
+            setPage(1);
+            setSearch(v);
           }}
           placeholder="Buscar por nome ou e-mail…"
         />
@@ -158,22 +158,22 @@ export default function UsersPage() {
         rows={usersQ.data?.data ?? []}
         rowKey={(u) => u.id}
         columns={[
-          { key: 'nome', header: 'Nome' },
-          { key: 'email', header: 'E-mail' },
+          { key: "nome", header: "Nome" },
+          { key: "email", header: "E-mail" },
           {
-            key: 'telefone',
-            header: 'Telefone',
-            render: (u) => u.telefone ?? '—',
+            key: "telefone",
+            header: "Telefone",
+            render: (u) => u.telefone ?? "—",
           },
           {
-            key: 'role',
-            header: 'Função',
+            key: "role",
+            header: "Função",
             render: (u) => <Badge tone={ROLE_TONE[u.role]}>{u.role}</Badge>,
           },
           {
-            key: 'acoes',
-            header: '',
-            className: 'text-right',
+            key: "acoes",
+            header: "",
+            className: "text-right",
             render: (u) => (
               <div className="flex justify-end gap-1">
                 <Button
@@ -189,7 +189,8 @@ export default function UsersPage() {
                     size="sm"
                     variant="ghost"
                     onClick={() => {
-                      if (confirm(`Remover "${u.nome}"?`)) deleteMut.mutate(u.id)
+                      if (confirm(`Remover "${u.nome}"?`))
+                        deleteMut.mutate(u.id);
                     }}
                     aria-label="Remover"
                   >
@@ -215,7 +216,7 @@ export default function UsersPage() {
       <Modal
         open={modalOpen}
         onClose={closeModal}
-        title={editing ? 'Editar usuário' : 'Novo usuário'}
+        title={editing ? "Editar usuário" : "Novo usuário"}
         size="lg"
         footer={
           <>
@@ -226,7 +227,7 @@ export default function UsersPage() {
               onClick={onSubmit as unknown as () => void}
               loading={createMut.isPending || updateMut.isPending}
             >
-              {editing ? 'Salvar' : 'Criar'}
+              {editing ? "Salvar" : "Criar"}
             </Button>
           </>
         }
@@ -255,7 +256,7 @@ export default function UsersPage() {
             onChange={(e) => setForm({ ...form, telefone: e.target.value })}
           />
           <Input
-            label={editing ? 'Nova senha (opcional)' : 'Senha'}
+            label={editing ? "Nova senha (opcional)" : "Senha"}
             type="password"
             required={!editing}
             value={form.senha}
@@ -265,9 +266,7 @@ export default function UsersPage() {
           <Select
             label="Função"
             value={form.role}
-            onChange={(e) =>
-              setForm({ ...form, role: e.target.value as Role })
-            }
+            onChange={(e) => setForm({ ...form, role: e.target.value as Role })}
           >
             <option value="ADMIN">Administrador</option>
             <option value="VENDEDOR">Vendedor</option>
@@ -277,5 +276,5 @@ export default function UsersPage() {
         </form>
       </Modal>
     </>
-  )
+  );
 }

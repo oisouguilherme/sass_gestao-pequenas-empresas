@@ -1,31 +1,31 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQuery } from "@tanstack/react-query";
 import {
   ClipboardList,
   Package,
   ScanBarcode,
   TrendingUp,
   Users,
-} from 'lucide-react'
-import { api } from '@/lib/api'
-import { formatBRL } from '@/lib/format'
-import { PageHeader } from '@/components/ui/PageHeader'
-import { Card, CardBody } from '@/components/ui/Card'
-import { Badge } from '@/components/ui/Badge'
+} from "lucide-react";
+import { api } from "@/lib/api";
+import { formatBRL } from "@/lib/format";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { Card, CardBody } from "@/components/ui/Card";
+import { Badge } from "@/components/ui/Badge";
 import type {
   Cliente,
   OrdemServico,
   Paginated,
   Produto,
   ReportSales,
-} from '@/lib/types'
-import { useAuth } from '@/contexts/AuthContext'
-import { Link } from 'react-router-dom'
+} from "@/lib/types";
+import { useAuth } from "@/contexts/AuthContext";
+import { Link } from "react-router-dom";
 
 interface KpiProps {
-  label: string
-  value: string | number
-  icon: React.ReactNode
-  hint?: string
+  label: string;
+  value: string | number;
+  icon: React.ReactNode;
+  hint?: string;
 }
 
 function Kpi({ label, value, icon, hint }: KpiProps) {
@@ -44,41 +44,41 @@ function Kpi({ label, value, icon, hint }: KpiProps) {
         </div>
       </CardBody>
     </Card>
-  )
+  );
 }
 
 export default function DashboardPage() {
-  const { user } = useAuth()
-  const canSeeReports = user?.role === 'ADMIN' || user?.role === 'VENDEDOR'
+  const { user } = useAuth();
+  const canSeeReports = user?.role === "ADMIN" || user?.role === "VENDEDOR";
 
   const reportsQ = useQuery({
-    queryKey: ['reports', 'sales', 'dashboard'],
-    queryFn: async () => (await api.get<ReportSales>('/reports/sales')).data,
+    queryKey: ["reports", "sales", "dashboard"],
+    queryFn: async () => (await api.get<ReportSales>("/reports/sales")).data,
     enabled: canSeeReports,
-  })
+  });
 
   const productsQ = useQuery({
-    queryKey: ['products', 'count'],
+    queryKey: ["products", "count"],
     queryFn: async () =>
-      (await api.get<Paginated<Produto>>('/products?perPage=1')).data,
-  })
+      (await api.get<Paginated<Produto>>("/products?perPage=1")).data,
+  });
 
   const clientsQ = useQuery({
-    queryKey: ['clients', 'count'],
+    queryKey: ["clients", "count"],
     queryFn: async () =>
-      (await api.get<Paginated<Cliente>>('/clients?perPage=1')).data,
-  })
+      (await api.get<Paginated<Cliente>>("/clients?perPage=1")).data,
+  });
 
   const ordersQ = useQuery({
-    queryKey: ['orders', 'recent'],
+    queryKey: ["orders", "recent"],
     queryFn: async () =>
-      (await api.get<Paginated<OrdemServico>>('/orders?perPage=5')).data,
-  })
+      (await api.get<Paginated<OrdemServico>>("/orders?perPage=5")).data,
+  });
 
   return (
     <>
       <PageHeader
-        title={`Olá, ${user?.nome.split(' ')[0]}`}
+        title={`Olá, ${user?.nome.split(" ")[0]}`}
         description="Visão geral da sua operação"
       />
 
@@ -148,7 +148,8 @@ export default function DashboardPage() {
                         {os.nome}
                       </Link>
                       <p className="text-xs text-slate-500">
-                        {os.usuarios.length} responsáve{os.usuarios.length === 1 ? 'l' : 'is'}
+                        {os.usuarios.length} responsáve
+                        {os.usuarios.length === 1 ? "l" : "is"}
                       </p>
                     </div>
                     <OSStatusBadge status={os.status} />
@@ -184,7 +185,7 @@ export default function DashboardPage() {
                         </p>
                         <p className="text-xs text-slate-500">
                           {u.numeroVendas} venda
-                          {u.numeroVendas === 1 ? '' : 's'}
+                          {u.numeroVendas === 1 ? "" : "s"}
                         </p>
                       </div>
                       <span className="text-sm font-semibold text-slate-900">
@@ -217,18 +218,18 @@ export default function DashboardPage() {
         />
       </div>
     </>
-  )
+  );
 }
 
-function OSStatusBadge({ status }: { status: OrdemServico['status'] }) {
+function OSStatusBadge({ status }: { status: OrdemServico["status"] }) {
   const map = {
-    ABERTA: { tone: 'info' as const, label: 'Aberta' },
-    EM_ANDAMENTO: { tone: 'warning' as const, label: 'Em andamento' },
-    CONCLUIDA: { tone: 'success' as const, label: 'Concluída' },
-    CANCELADA: { tone: 'danger' as const, label: 'Cancelada' },
-  }
-  const cfg = map[status]
-  return <Badge tone={cfg.tone}>{cfg.label}</Badge>
+    ABERTA: { tone: "info" as const, label: "Aberta" },
+    EM_ANDAMENTO: { tone: "warning" as const, label: "Em andamento" },
+    CONCLUIDA: { tone: "success" as const, label: "Concluída" },
+    CANCELADA: { tone: "danger" as const, label: "Cancelada" },
+  };
+  const cfg = map[status];
+  return <Badge tone={cfg.tone}>{cfg.label}</Badge>;
 }
 
 function QuickAction({
@@ -236,9 +237,9 @@ function QuickAction({
   label,
   icon,
 }: {
-  to: string
-  label: string
-  icon: React.ReactNode
+  to: string;
+  label: string;
+  icon: React.ReactNode;
 }) {
   return (
     <Link
@@ -250,5 +251,5 @@ function QuickAction({
       </span>
       {label}
     </Link>
-  )
+  );
 }

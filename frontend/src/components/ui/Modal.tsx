@@ -1,22 +1,22 @@
-import { useEffect, type ReactNode } from 'react'
-import { createPortal } from 'react-dom'
-import { X } from 'lucide-react'
+import { useEffect, type ReactNode } from "react";
+import { createPortal } from "react-dom";
+import { X } from "lucide-react";
 
 interface ModalProps {
-  open: boolean
-  onClose: () => void
-  title?: string
-  children: ReactNode
-  footer?: ReactNode
-  size?: 'sm' | 'md' | 'lg' | 'xl'
+  open: boolean;
+  onClose: () => void;
+  title?: string;
+  children: ReactNode;
+  footer?: ReactNode;
+  size?: "sm" | "md" | "lg" | "xl";
 }
 
 const sizes = {
-  sm: 'max-w-sm',
-  md: 'max-w-md',
-  lg: 'max-w-2xl',
-  xl: 'max-w-4xl',
-}
+  sm: "max-w-sm",
+  md: "max-w-md",
+  lg: "max-w-2xl",
+  xl: "max-w-4xl",
+};
 
 export function Modal({
   open,
@@ -24,22 +24,22 @@ export function Modal({
   title,
   children,
   footer,
-  size = 'md',
+  size = "md",
 }: ModalProps) {
   useEffect(() => {
-    if (!open) return
+    if (!open) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
-    }
-    document.addEventListener('keydown', onKey)
-    document.body.style.overflow = 'hidden'
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    document.body.style.overflow = "hidden";
     return () => {
-      document.removeEventListener('keydown', onKey)
-      document.body.style.overflow = ''
-    }
-  }, [open, onClose])
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = "";
+    };
+  }, [open, onClose]);
 
-  if (!open) return null
+  if (!open) return null;
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -74,5 +74,5 @@ export function Modal({
       </div>
     </div>,
     document.body,
-  )
+  );
 }

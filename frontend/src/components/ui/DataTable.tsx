@@ -1,24 +1,24 @@
-import type { ReactNode } from 'react'
+import type { ReactNode } from "react";
 
 interface DataTableProps<T> {
   columns: Array<{
-    key: string
-    header: string
-    render?: (row: T) => ReactNode
-    className?: string
-  }>
-  rows: T[]
-  loading?: boolean
-  emptyMessage?: string
-  rowKey: (row: T) => string
-  onRowClick?: (row: T) => void
+    key: string;
+    header: string;
+    render?: (row: T) => ReactNode;
+    className?: string;
+  }>;
+  rows: T[];
+  loading?: boolean;
+  emptyMessage?: string;
+  rowKey: (row: T) => string;
+  onRowClick?: (row: T) => void;
 }
 
 export function DataTable<T>({
   columns,
   rows,
   loading,
-  emptyMessage = 'Nenhum registro encontrado.',
+  emptyMessage = "Nenhum registro encontrado.",
   rowKey,
   onRowClick,
 }: DataTableProps<T>) {
@@ -32,7 +32,7 @@ export function DataTable<T>({
                 <th
                   key={col.key}
                   scope="col"
-                  className={`px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600 ${col.className ?? ''}`}
+                  className={`px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600 ${col.className ?? ""}`}
                 >
                   {col.header}
                 </th>
@@ -65,18 +65,20 @@ export function DataTable<T>({
                   onClick={onRowClick ? () => onRowClick(row) : undefined}
                   className={
                     onRowClick
-                      ? 'cursor-pointer hover:bg-slate-50'
-                      : 'hover:bg-slate-50'
+                      ? "cursor-pointer hover:bg-slate-50"
+                      : "hover:bg-slate-50"
                   }
                 >
                   {columns.map((col) => (
                     <td
                       key={col.key}
-                      className={`px-4 py-3 text-sm text-slate-700 ${col.className ?? ''}`}
+                      className={`px-4 py-3 text-sm text-slate-700 ${col.className ?? ""}`}
                     >
                       {col.render
                         ? col.render(row)
-                        : String((row as Record<string, unknown>)[col.key] ?? '—')}
+                        : String(
+                            (row as Record<string, unknown>)[col.key] ?? "—",
+                          )}
                     </td>
                   ))}
                 </tr>
@@ -86,15 +88,15 @@ export function DataTable<T>({
         </table>
       </div>
     </div>
-  )
+  );
 }
 
 interface PaginationProps {
-  page: number
-  perPage: number
-  total: number
-  lastPage: number
-  onChange: (page: number) => void
+  page: number;
+  perPage: number;
+  total: number;
+  lastPage: number;
+  onChange: (page: number) => void;
 }
 
 export function Pagination({
@@ -104,9 +106,9 @@ export function Pagination({
   lastPage,
   onChange,
 }: PaginationProps) {
-  if (total === 0) return null
-  const start = (page - 1) * perPage + 1
-  const end = Math.min(page * perPage, total)
+  if (total === 0) return null;
+  const start = (page - 1) * perPage + 1;
+  const end = Math.min(page * perPage, total);
   return (
     <div className="flex items-center justify-between px-1 py-3 text-sm text-slate-600">
       <span>
@@ -132,5 +134,5 @@ export function Pagination({
         </button>
       </div>
     </div>
-  )
+  );
 }

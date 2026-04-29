@@ -74,22 +74,22 @@ Frontend sobe em `http://localhost:5173`.
 
 #### Telas disponíveis
 
-| Rota            | Acesso              | Descrição                                                            |
-| --------------- | ------------------- | -------------------------------------------------------------------- |
-| `/login`        | público             | Login por e-mail e senha                                             |
-| `/`             | autenticado         | Dashboard com KPIs, OS recentes e ranking de vendas                  |
-| `/sales`        | autenticado         | **PDV** com leitor de código (autofocus), desconto e finalização    |
-| `/orders`       | autenticado         | Lista de OSs com filtros e criação; detalhe em abas (Dados/Usuários/Produtos/Status) |
-| `/products`     | autenticado         | CRUD de produtos                                                     |
-| `/clients`      | autenticado         | CRUD de clientes                                                     |
-| `/users`        | ADMIN               | CRUD de usuários e papel (ADMIN/VENDEDOR/OPERADOR)                   |
-| `/reports`      | ADMIN, VENDEDOR     | Relatório de vendas com filtros (período, usuário, status)            |
+| Rota        | Acesso          | Descrição                                                                            |
+| ----------- | --------------- | ------------------------------------------------------------------------------------ |
+| `/login`    | público         | Login por e-mail e senha                                                             |
+| `/`         | autenticado     | Dashboard com KPIs, OS recentes e ranking de vendas                                  |
+| `/sales`    | autenticado     | **PDV** com leitor de código (autofocus), desconto e finalização                     |
+| `/orders`   | autenticado     | Lista de OSs com filtros e criação; detalhe em abas (Dados/Usuários/Produtos/Status) |
+| `/products` | autenticado     | CRUD de produtos                                                                     |
+| `/clients`  | autenticado     | CRUD de clientes                                                                     |
+| `/users`    | ADMIN           | CRUD de usuários e papel (ADMIN/VENDEDOR/OPERADOR)                                   |
+| `/reports`  | ADMIN, VENDEDOR | Relatório de vendas com filtros (período, usuário, status)                           |
 
 #### Fluxo de autenticação
 
 - `accessToken` (15min) mantido **em memória** (nunca em `localStorage`).
 - `refreshToken` em cookie **httpOnly + SameSite + Secure** com path `/auth`, rotacionado a cada uso.
-- *Silent refresh* no boot da SPA + interceptor 401 → refresh automático → retry da request original.
+- _Silent refresh_ no boot da SPA + interceptor 401 → refresh automático → retry da request original.
 
 ## Estrutura
 

@@ -1,16 +1,16 @@
-import { Search } from 'lucide-react'
-import type { ChangeEvent } from 'react'
+import { Search } from "lucide-react";
+import type { ChangeEvent } from "react";
 
 interface SearchInputProps {
-  value: string
-  onChange: (v: string) => void
-  placeholder?: string
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
 }
 
 export function SearchInput({
   value,
   onChange,
-  placeholder = 'Buscar…',
+  placeholder = "Buscar…",
 }: SearchInputProps) {
   return (
     <div className="relative">
@@ -18,10 +18,12 @@ export function SearchInput({
       <input
         type="search"
         value={value}
-        onChange={(e: ChangeEvent<HTMLInputElement>) => onChange(e.target.value)}
+        onChange={(e: ChangeEvent<HTMLInputElement>) =>
+          onChange(e.target.value)
+        }
         placeholder={placeholder}
         className="block w-full rounded-lg border border-slate-300 bg-white py-2 pl-9 pr-3 text-sm text-slate-900 shadow-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200"
       />
     </div>
-  )
+  );
 }

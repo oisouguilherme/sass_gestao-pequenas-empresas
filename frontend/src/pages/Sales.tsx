@@ -1,47 +1,47 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ScanBarcode, Trash2, X } from 'lucide-react'
-import { toast } from 'sonner'
-import { api, extractErrorMessage } from '@/lib/api'
-import type { Paginated, TipoPagamento, Venda } from '@/lib/types'
-import { PageHeader } from '@/components/ui/PageHeader'
-import { Button } from '@/components/ui/Button'
-import { Input } from '@/components/ui/Input'
-import { Select } from '@/components/ui/Select'
-import { Card, CardBody } from '@/components/ui/Card'
-import { Badge } from '@/components/ui/Badge'
-import { formatBRL, formatDate } from '@/lib/format'
+import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { ScanBarcode, Trash2, X } from "lucide-react";
+import { toast } from "sonner";
+import { api, extractErrorMessage } from "@/lib/api";
+import type { Paginated, TipoPagamento, Venda } from "@/lib/types";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { Select } from "@/components/ui/Select";
+import { Card, CardBody } from "@/components/ui/Card";
+import { Badge } from "@/components/ui/Badge";
+import { formatBRL, formatDate } from "@/lib/format";
 
 export default function SalesPage() {
-  const qc = useQueryClient()
-  const [activeSale, setActiveSale] = useState<Venda | null>(null)
-  const [codigo, setCodigo] = useState('')
-  const [quantidade, setQuantidade] = useState(1)
-  const [desconto, setDesconto] = useState('0')
-  const [tipoPagamento, setTipoPagamento] = useState<TipoPagamento>('DINHEIRO')
-  const inputRef = useRef<HTMLInputElement>(null)
+  const qc = useQueryClient();
+  const [activeSale, setActiveSale] = useState<Venda | null>(null);
+  const [codigo, setCodigo] = useState("");
+  const [quantidade, setQuantidade] = useState(1);
+  const [desconto, setDesconto] = useState("0");
+  const [tipoPagamento, setTipoPagamento] = useState<TipoPagamento>("DINHEIRO");
+  const inputRef = useRef<HTMLInputElement>(null);
 
   // Lista as últimas vendas
   const salesQ = useQuery({
-    queryKey: ['sales', 'recent'],
+    queryKey: ["sales", "recent"],
     queryFn: async () =>
-      (await api.get<Paginated<Venda>>('/sales?perPage=10')).data,
-  })
+      (await api.get<Paginated<Venda>>("/sales?perPage=10")).data,
+  });
 
   useEffect(() => {
-    if (activeSale) inputRef.current?.focus()
-  }, [activeSale])
+    if (activeSale) inputRef.current?.focus();
+  }, [activeSale]);
 
   const createMut = useMutation({
-    mutationFn: async () => (await api.post<Venda>('/sales', {})).data,
+    mutationFn: async () => (await api.post<Venda>("/sales", {})).data,
     onSuccess: (sale) => {
-      setActiveSale(sale)
-      setDesconto('0')
-      setTipoPagamento('DINHEIRO')
-      qc.invalidateQueries({ queryKey: ['sales'] })
+      setActiveSale(sale);
+      setDesconto("0");
+      setTipoPagamento("DINHEIRO");
+      qc.invalidateQueries({ queryKey: ["sales"] });
     },
     onError: (e) => toast.error(extractErrorMessage(e)),
-  })
+  });
 
   const addItemMut = useMutation({
     mutationFn: async ({
@@ -49,9 +49,9 @@ export default function SalesPage() {
       codigo,
       quantidade,
     }: {
-      saleId: string
-      codigo: string
-      quantidade: number
+      saleId: string;
+      codigo: string;
+      quantidade: number;
     }) =>
       (
         await api.post<Venda>(`/sales/${saleId}/itens`, {
@@ -60,49 +60,46 @@ export default function SalesPage() {
         })
       ).data,
     onSuccess: (sale) => {
-      setActiveSale(sale)
-      setCodigo('')
-      setQuantidade(1)
-      inputRef.current?.focus()
+      setActiveSale(sale);
+      setCodigo("");
+      setQuantidade(1);
+      inputRef.current?.focus();
     },
     onError: (e) => toast.error(extractErrorMessage(e)),
-  })
+  });
 
   const removeItemMut = useMutation({
     mutationFn: async ({
       saleId,
       produtoId,
     }: {
-      saleId: string
-      produtoId: string
-    }) =>
-      (await api.delete<Venda>(`/sales/${saleId}/itens/${produtoId}`)).data,
+      saleId: string;
+      produtoId: string;
+    }) => (await api.delete<Venda>(`/sales/${saleId}/itens/${produtoId}`)).data,
     onSuccess: (sale) => setActiveSale(sale),
     onError: (e) => toast.error(extractErrorMessage(e)),
-  })
+  });
 
   const discountMut = useMutation({
     mutationFn: async ({
       saleId,
       desconto,
     }: {
-      saleId: string
-      desconto: number
+      saleId: string;
+      desconto: number;
     }) =>
-      (
-        await api.patch<Venda>(`/sales/${saleId}/desconto`, { desconto })
-      ).data,
+      (await api.patch<Venda>(`/sales/${saleId}/desconto`, { desconto })).data,
     onSuccess: (sale) => setActiveSale(sale),
     onError: (e) => toast.error(extractErrorMessage(e)),
-  })
+  });
 
   const finalizeMut = useMutation({
     mutationFn: async ({
       saleId,
       tipoPagamento,
     }: {
-      saleId: string
-      tipoPagamento: TipoPagamento
+      saleId: string;
+      tipoPagamento: TipoPagamento;
     }) =>
       (
         await api.post<Venda>(`/sales/${saleId}/finalizar`, {
@@ -110,44 +107,44 @@ export default function SalesPage() {
         })
       ).data,
     onSuccess: () => {
-      toast.success('Venda finalizada!')
-      setActiveSale(null)
-      qc.invalidateQueries({ queryKey: ['sales'] })
-      qc.invalidateQueries({ queryKey: ['reports'] })
+      toast.success("Venda finalizada!");
+      setActiveSale(null);
+      qc.invalidateQueries({ queryKey: ["sales"] });
+      qc.invalidateQueries({ queryKey: ["reports"] });
     },
     onError: (e) => toast.error(extractErrorMessage(e)),
-  })
+  });
 
   const cancelMut = useMutation({
     mutationFn: async (saleId: string) =>
       (await api.post<Venda>(`/sales/${saleId}/cancelar`)).data,
     onSuccess: () => {
-      toast.success('Venda cancelada')
-      setActiveSale(null)
-      qc.invalidateQueries({ queryKey: ['sales'] })
+      toast.success("Venda cancelada");
+      setActiveSale(null);
+      qc.invalidateQueries({ queryKey: ["sales"] });
     },
     onError: (e) => toast.error(extractErrorMessage(e)),
-  })
+  });
 
   const onAddItem = (e: FormEvent) => {
-    e.preventDefault()
-    if (!activeSale) return
-    const code = codigo.trim()
-    if (!code) return
+    e.preventDefault();
+    if (!activeSale) return;
+    const code = codigo.trim();
+    if (!code) return;
     addItemMut.mutate({
       saleId: activeSale.id,
       codigo: code,
       quantidade: Math.max(1, quantidade),
-    })
-  }
+    });
+  };
 
   const applyDiscount = () => {
-    if (!activeSale) return
+    if (!activeSale) return;
     discountMut.mutate({
       saleId: activeSale.id,
       desconto: Math.max(0, Number(desconto) || 0),
-    })
-  }
+    });
+  };
 
   return (
     <>
@@ -193,9 +190,8 @@ export default function SalesPage() {
                         Venda #{s.id.slice(-8)}
                       </p>
                       <p className="text-xs text-slate-500">
-                        {formatDate(s.createdAt)} ·{' '}
-                        {s.produtos.length} ite
-                        {s.produtos.length === 1 ? 'm' : 'ns'}
+                        {formatDate(s.createdAt)} · {s.produtos.length} ite
+                        {s.produtos.length === 1 ? "m" : "ns"}
                       </p>
                     </div>
                     <div className="flex items-center gap-3">
@@ -204,11 +200,11 @@ export default function SalesPage() {
                       </span>
                       <Badge
                         tone={
-                          s.status === 'FINALIZADA'
-                            ? 'success'
-                            : s.status === 'ABERTA'
-                              ? 'info'
-                              : 'danger'
+                          s.status === "FINALIZADA"
+                            ? "success"
+                            : s.status === "ABERTA"
+                              ? "info"
+                              : "danger"
                         }
                       >
                         {s.status}
@@ -280,7 +276,7 @@ export default function SalesPage() {
                             {it.produto.nome}
                           </p>
                           <p className="text-xs text-slate-500">
-                            {it.produto.codigo} · {formatBRL(it.precoUnitario)}{' '}
+                            {it.produto.codigo} · {formatBRL(it.precoUnitario)}{" "}
                             × {it.quantidade}
                           </p>
                         </div>
@@ -388,8 +384,8 @@ export default function SalesPage() {
                   variant="ghost"
                   className="w-full text-red-600 hover:bg-red-50"
                   onClick={() => {
-                    if (confirm('Cancelar esta venda?'))
-                      cancelMut.mutate(activeSale.id)
+                    if (confirm("Cancelar esta venda?"))
+                      cancelMut.mutate(activeSale.id);
                   }}
                   loading={cancelMut.isPending}
                 >
@@ -401,5 +397,5 @@ export default function SalesPage() {
         </div>
       )}
     </>
-  )
+  );
 }

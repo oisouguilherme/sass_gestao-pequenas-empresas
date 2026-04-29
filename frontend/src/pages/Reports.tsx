@@ -1,54 +1,54 @@
-import { useMemo, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { TrendingUp, ScanBarcode, Receipt } from 'lucide-react'
-import { api } from '@/lib/api'
-import type { Paginated, ReportSales, Usuario } from '@/lib/types'
-import { PageHeader } from '@/components/ui/PageHeader'
-import { Card, CardBody } from '@/components/ui/Card'
-import { Input } from '@/components/ui/Input'
-import { Select } from '@/components/ui/Select'
-import { formatBRL } from '@/lib/format'
-import { DataTable } from '@/components/ui/DataTable'
+import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { TrendingUp, ScanBarcode, Receipt } from "lucide-react";
+import { api } from "@/lib/api";
+import type { Paginated, ReportSales, Usuario } from "@/lib/types";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { Card, CardBody } from "@/components/ui/Card";
+import { Input } from "@/components/ui/Input";
+import { Select } from "@/components/ui/Select";
+import { formatBRL } from "@/lib/format";
+import { DataTable } from "@/components/ui/DataTable";
 
-type Status = 'FINALIZADA' | 'CANCELADA' | 'ABERTA'
+type Status = "FINALIZADA" | "CANCELADA" | "ABERTA";
 
 interface Filters {
-  from: string
-  to: string
-  usuarioId: string
-  status: Status
+  from: string;
+  to: string;
+  usuarioId: string;
+  status: Status;
 }
 
 const empty: Filters = {
-  from: '',
-  to: '',
-  usuarioId: '',
-  status: 'FINALIZADA',
-}
+  from: "",
+  to: "",
+  usuarioId: "",
+  status: "FINALIZADA",
+};
 
 export default function ReportsPage() {
-  const [filters, setFilters] = useState<Filters>(empty)
+  const [filters, setFilters] = useState<Filters>(empty);
 
   const params = useMemo(() => {
-    const p = new URLSearchParams()
-    if (filters.from) p.set('from', filters.from)
-    if (filters.to) p.set('to', filters.to)
-    if (filters.usuarioId) p.set('usuarioId', filters.usuarioId)
-    if (filters.status) p.set('status', filters.status)
-    return p.toString()
-  }, [filters])
+    const p = new URLSearchParams();
+    if (filters.from) p.set("from", filters.from);
+    if (filters.to) p.set("to", filters.to);
+    if (filters.usuarioId) p.set("usuarioId", filters.usuarioId);
+    if (filters.status) p.set("status", filters.status);
+    return p.toString();
+  }, [filters]);
 
   const reportQ = useQuery({
-    queryKey: ['reports', 'sales', params],
+    queryKey: ["reports", "sales", params],
     queryFn: async () =>
       (await api.get<ReportSales>(`/reports/sales?${params}`)).data,
-  })
+  });
 
   const usersQ = useQuery({
-    queryKey: ['users', 'all'],
+    queryKey: ["users", "all"],
     queryFn: async () =>
-      (await api.get<Paginated<Usuario>>('/users?perPage=100')).data,
-  })
+      (await api.get<Paginated<Usuario>>("/users?perPage=100")).data,
+  });
 
   return (
     <>
@@ -64,9 +64,7 @@ export default function ReportsPage() {
               label="De"
               type="date"
               value={filters.from}
-              onChange={(e) =>
-                setFilters({ ...filters, from: e.target.value })
-              }
+              onChange={(e) => setFilters({ ...filters, from: e.target.value })}
             />
             <Input
               label="Até"
@@ -132,11 +130,11 @@ export default function ReportsPage() {
             rowKey={(r) => r.usuarioId}
             emptyMessage="Sem vendas no período."
             columns={[
-              { key: 'usuarioNome', header: 'Usuário' },
-              { key: 'numeroVendas', header: 'Vendas' },
+              { key: "usuarioNome", header: "Usuário" },
+              { key: "numeroVendas", header: "Vendas" },
               {
-                key: 'totalVendido',
-                header: 'Total',
+                key: "totalVendido",
+                header: "Total",
                 render: (r) => formatBRL(r.totalVendido),
               },
             ]}
@@ -144,7 +142,7 @@ export default function ReportsPage() {
         </CardBody>
       </Card>
     </>
-  )
+  );
 }
 
 function Kpi({
@@ -152,9 +150,9 @@ function Kpi({
   value,
   icon,
 }: {
-  label: string
-  value: string
-  icon: React.ReactNode
+  label: string;
+  value: string;
+  icon: React.ReactNode;
 }) {
   return (
     <Card>
@@ -170,5 +168,5 @@ function Kpi({
         </div>
       </CardBody>
     </Card>
-  )
+  );
 }

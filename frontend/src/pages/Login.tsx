@@ -1,33 +1,33 @@
-import { useState, type FormEvent } from 'react'
-import { Navigate, useNavigate } from 'react-router-dom'
-import { toast } from 'sonner'
-import { useAuth } from '@/contexts/AuthContext'
-import { Button } from '@/components/ui/Button'
-import { Input } from '@/components/ui/Input'
-import { extractErrorMessage } from '@/lib/api'
+import { useState, type FormEvent } from "react";
+import { Navigate, useNavigate } from "react-router-dom";
+import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { extractErrorMessage } from "@/lib/api";
 
 export default function LoginPage() {
-  const { user, loading, login } = useAuth()
-  const navigate = useNavigate()
-  const [email, setEmail] = useState('admin@demo.com')
-  const [senha, setSenha] = useState('admin123')
-  const [submitting, setSubmitting] = useState(false)
+  const { user, loading, login } = useAuth();
+  const navigate = useNavigate();
+  const [email, setEmail] = useState("admin@demo.com");
+  const [senha, setSenha] = useState("admin123");
+  const [submitting, setSubmitting] = useState(false);
 
-  if (!loading && user) return <Navigate to="/" replace />
+  if (!loading && user) return <Navigate to="/" replace />;
 
   const onSubmit = async (e: FormEvent) => {
-    e.preventDefault()
-    setSubmitting(true)
+    e.preventDefault();
+    setSubmitting(true);
     try {
-      await login(email, senha)
-      toast.success('Bem-vindo de volta!')
-      navigate('/', { replace: true })
+      await login(email, senha);
+      toast.success("Bem-vindo de volta!");
+      navigate("/", { replace: true });
     } catch (err) {
-      toast.error(extractErrorMessage(err, 'Falha ao entrar'))
+      toast.error(extractErrorMessage(err, "Falha ao entrar"));
     } finally {
-      setSubmitting(false)
+      setSubmitting(false);
     }
-  }
+  };
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 to-brand-50 p-6">
@@ -77,5 +77,5 @@ export default function LoginPage() {
         </form>
       </div>
     </div>
-  )
+  );
 }
