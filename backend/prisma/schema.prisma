@@ -1,0 +1,249 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// =============================================================================
+// ENUMS
+// =============================================================================
+
+enum Role {
+  ADMIN
+  VENDEDOR
+  OPERADOR
+}
+
+enum OSStatus {
+  ABERTA
+  EM_ANDAMENTO
+  CONCLUIDA
+  CANCELADA
+}
+
+enum TipoPagamento {
+  DINHEIRO
+  PIX
+  CREDITO
+  DEBITO
+}
+
+enum VendaStatus {
+  ABERTA
+  FINALIZADA
+  CANCELADA
+}
+
+// =============================================================================
+// EMPRESA (TENANT)
+// =============================================================================
+
+model Empresa {
+  id              String   @id @default(cuid())
+  nome            String
+  nomeResponsavel String
+  ativa           Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  deletedAt       DateTime?
+
+  usuarios       Usuario[]
+  produtos       Produto[]
+  clientes       Cliente[]
+  ordensServico  OrdemServico[]
+  vendas         Venda[]
+
+  @@index([ativa])
+  @@map("empresas")
+}
+
+// =============================================================================
+// USUARIO
+// =============================================================================
+
+model Usuario {
+  id        String   @id @default(cuid())
+  nome      String
+  email     String   @unique
+  senha     String
+  telefone  String?
+  role      Role     @default(OPERADOR)
+  empresaId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  empresa       Empresa                @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  refreshTokens RefreshToken[]
+  ordensServico OrdemServicoUsuario[]
+  vendas        Venda[]
+
+  @@index([empresaId])
+  @@index([empresaId, role])
+  @@map("usuarios")
+}
+
+// =============================================================================
+// REFRESH TOKEN
+// =============================================================================
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  tokenHash String   @unique
+  usuarioId String
+  expiresAt DateTime
+  revokedAt DateTime?
+  userAgent String?
+  ip        String?
+  createdAt DateTime @default(now())
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@index([usuarioId])
+  @@index([expiresAt])
+  @@map("refresh_tokens")
+}
+
+// =============================================================================
+// PRODUTO
+// =============================================================================
+
+model Produto {
+  id        String   @id @default(cuid())
+  nome      String
+  preco     Decimal  @db.Decimal(12, 2)
+  codigo    String
+  empresaId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  empresa        Empresa                @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  ordensServico  OrdemServicoProduto[]
+  vendas         VendaProduto[]
+
+  @@unique([empresaId, codigo])
+  @@index([empresaId])
+  @@index([empresaId, nome])
+  @@map("produtos")
+}
+
+// =============================================================================
+// CLIENTE
+// =============================================================================
+
+model Cliente {
+  id        String   @id @default(cuid())
+  nome      String
+  documento String?
+  telefone  String?
+  endereco  String?
+  email     String?
+  empresaId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  empresa Empresa @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+
+  @@index([empresaId])
+  @@index([empresaId, nome])
+  @@map("clientes")
+}
+
+// =============================================================================
+// ORDEM DE SERVICO
+// =============================================================================
+
+model OrdemServico {
+  id          String    @id @default(cuid())
+  nome        String
+  descricao   String?
+  status      OSStatus  @default(ABERTA)
+  pago        Boolean   @default(false)
+  deadlineAt  DateTime?
+  empresaId   String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  empresa   Empresa                @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  usuarios  OrdemServicoUsuario[]
+  produtos  OrdemServicoProduto[]
+
+  @@index([empresaId])
+  @@index([empresaId, status])
+  @@map("ordens_servico")
+}
+
+model OrdemServicoUsuario {
+  ordemServicoId String
+  usuarioId      String
+  atribuidoEm    DateTime @default(now())
+
+  ordemServico OrdemServico @relation(fields: [ordemServicoId], references: [id], onDelete: Cascade)
+  usuario      Usuario      @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@id([ordemServicoId, usuarioId])
+  @@index([usuarioId])
+  @@map("ordens_servico_usuarios")
+}
+
+model OrdemServicoProduto {
+  ordemServicoId String
+  produtoId      String
+  quantidade     Int    @default(1)
+
+  ordemServico OrdemServico @relation(fields: [ordemServicoId], references: [id], onDelete: Cascade)
+  produto      Produto      @relation(fields: [produtoId], references: [id], onDelete: Restrict)
+
+  @@id([ordemServicoId, produtoId])
+  @@index([produtoId])
+  @@map("ordens_servico_produtos")
+}
+
+// =============================================================================
+// VENDA (PDV)
+// =============================================================================
+
+model Venda {
+  id             String         @id @default(cuid())
+  tipoPagamento  TipoPagamento?
+  valorTotal     Decimal        @default(0) @db.Decimal(12, 2)
+  desconto       Decimal        @default(0) @db.Decimal(12, 2)
+  valorFinal     Decimal        @default(0) @db.Decimal(12, 2)
+  status         VendaStatus    @default(ABERTA)
+  usuarioId      String
+  empresaId      String
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  cancelAt       DateTime?
+
+  empresa  Empresa        @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  usuario  Usuario        @relation(fields: [usuarioId], references: [id], onDelete: Restrict)
+  produtos VendaProduto[]
+
+  @@index([empresaId])
+  @@index([empresaId, status])
+  @@index([empresaId, usuarioId])
+  @@index([empresaId, createdAt])
+  @@map("vendas")
+}
+
+model VendaProduto {
+  vendaId       String
+  produtoId     String
+  quantidade    Int     @default(1)
+  precoUnitario Decimal @db.Decimal(12, 2)
+  subtotal      Decimal @db.Decimal(12, 2)
+
+  venda   Venda   @relation(fields: [vendaId], references: [id], onDelete: Cascade)
+  produto Produto @relation(fields: [produtoId], references: [id], onDelete: Restrict)
+
+  @@id([vendaId, produtoId])
+  @@index([produtoId])
+  @@map("vendas_produtos")
+}
