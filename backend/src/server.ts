@@ -1,10 +1,9 @@
-import 'dotenv/config'
 import { createApp } from './app.js'
+import { env } from './shared/config/env.js'
 
-const port = Number(process.env.PORT ?? 3333)
 const app = createApp()
 
-app.listen(port, () => {
+app.listen(env.PORT, () => {
   // eslint-disable-next-line no-console
-  console.log(`[backend] listening on http://localhost:${port}`)
+  console.log(`[backend] listening on http://localhost:${env.PORT}`)
 })
