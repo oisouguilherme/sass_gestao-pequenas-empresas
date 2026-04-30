@@ -1,0 +1,13 @@
+import { defineConfig } from "tsup";
+
+export default defineConfig({
+  entry: { index: "api/index.ts" },
+  outDir: "dist",
+  format: ["cjs"],
+  target: "node20",
+  bundle: true,
+  splitting: false,
+  sourcemap: false,
+  clean: true,
+  external: ["@prisma/client"],
+});
