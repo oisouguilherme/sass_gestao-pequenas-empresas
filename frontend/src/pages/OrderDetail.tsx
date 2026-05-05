@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Trash2 } from "lucide-react";
+import { ArrowLeft, Clock, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { api, extractErrorMessage } from "@/lib/api";
 import type {
   OrdemServico,
+  OrdemServicoHistorico,
   OSStatus,
   Paginated,
   Produto,
@@ -17,9 +18,9 @@ import { Card, CardBody } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Textarea } from "@/components/ui/Textarea";
-import { formatDate } from "@/lib/format";
+import { formatDate, formatDateTime } from "@/lib/format";
 
-type Tab = "dados" | "usuarios" | "produtos" | "status";
+type Tab = "dados" | "usuarios" | "produtos" | "status" | "historico";
 
 const STATUS_LABEL: Record<OSStatus, string> = {
   ABERTA: "Aberta",
@@ -111,6 +112,7 @@ export default function OrderDetailPage() {
               ["usuarios", "Usuários"],
               ["produtos", "Produtos"],
               ["status", "Status"],
+              ["historico", "Histórico"],
             ] as const
           ).map(([key, label]) => (
             <button
@@ -132,6 +134,7 @@ export default function OrderDetailPage() {
       {tab === "usuarios" && <UsuariosTab os={os} />}
       {tab === "produtos" && <ProdutosTab os={os} />}
       {tab === "status" && <StatusTab os={os} />}
+      {tab === "historico" && <HistoricoTab osId={os.id} />}
     </>
   );
 }
@@ -143,6 +146,17 @@ function DadosTab({ os }: { os: OrdemServico }) {
     descricao: os.descricao ?? "",
     deadlineAt: os.deadlineAt ? os.deadlineAt.slice(0, 16) : "",
     pago: os.pago,
+    clienteId: os.clienteId ?? "",
+  });
+
+  const clientesQ = useQuery({
+    queryKey: ["clients", "all"],
+    queryFn: async () =>
+      (
+        await api.get<
+          Paginated<{ id: string; nome: string; documento: string | null }>
+        >("/clients?perPage=100")
+      ).data,
   });
 
   const mut = useMutation({
@@ -152,6 +166,7 @@ function DadosTab({ os }: { os: OrdemServico }) {
         descricao: form.descricao || null,
         deadlineAt: form.deadlineAt || null,
         pago: form.pago,
+        clienteId: form.clienteId || null,
       }),
     onSuccess: () => {
       toast.success("Salvo");
@@ -190,6 +205,19 @@ function DadosTab({ os }: { os: OrdemServico }) {
           />
           Marcar como pago
         </label>
+        <Select
+          label="Cliente vinculado"
+          value={form.clienteId}
+          onChange={(e) => setForm({ ...form, clienteId: e.target.value })}
+        >
+          <option value="">Sem cliente</option>
+          {clientesQ.data?.data.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.nome}
+              {c.documento ? ` · ${c.documento}` : ""}
+            </option>
+          ))}
+        </Select>
         <div className="flex justify-end">
           <Button onClick={() => mut.mutate()} loading={mut.isPending}>
             Salvar alterações
@@ -271,11 +299,15 @@ function ProdutosTab({ os }: { os: OrdemServico }) {
     })),
   );
   const [pickProductId, setPickProductId] = useState("");
+  const [productSearch, setProductSearch] = useState("");
 
   const productsQ = useQuery({
-    queryKey: ["products", "all"],
-    queryFn: async () =>
-      (await api.get<Paginated<Produto>>("/products?perPage=200")).data,
+    queryKey: ["products", "picker", productSearch],
+    queryFn: async () => {
+      const params = new URLSearchParams({ perPage: "100", page: "1" });
+      if (productSearch) params.set("q", productSearch);
+      return (await api.get<Paginated<Produto>>(`/products?${params}`)).data;
+    },
   });
 
   const mut = useMutation({
@@ -302,21 +334,42 @@ function ProdutosTab({ os }: { os: OrdemServico }) {
     <Card>
       <CardBody className="space-y-4">
         <div className="flex gap-2">
-          <Select
-            value={pickProductId}
-            onChange={(e) => setPickProductId(e.target.value)}
-            className="flex-1"
+          <div className="flex-1 space-y-1">
+            <Input
+              placeholder="Buscar produto pelo nome ou código…"
+              value={productSearch}
+              onChange={(e) => {
+                setProductSearch(e.target.value);
+                setPickProductId("");
+              }}
+            />
+            <Select
+              value={pickProductId}
+              onChange={(e) => setPickProductId(e.target.value)}
+            >
+              <option value="">
+                {productsQ.isLoading
+                  ? "Carregando…"
+                  : (productsQ.data?.data.filter(
+                        (p) => !items.find((i) => i.produtoId === p.id),
+                      ).length ?? 0) === 0
+                    ? "Nenhum produto encontrado"
+                    : "Selecione um produto…"}
+              </option>
+              {productsQ.data?.data
+                .filter((p) => !items.find((i) => i.produtoId === p.id))
+                .map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.codigo} — {p.nome}
+                  </option>
+                ))}
+            </Select>
+          </div>
+          <Button
+            onClick={addItem}
+            disabled={!pickProductId}
+            className="self-end"
           >
-            <option value="">Selecione um produto…</option>
-            {productsQ.data?.data
-              .filter((p) => !items.find((i) => i.produtoId === p.id))
-              .map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.codigo} — {p.nome}
-                </option>
-              ))}
-          </Select>
-          <Button onClick={addItem} disabled={!pickProductId}>
             Adicionar
           </Button>
         </div>
@@ -415,6 +468,61 @@ function StatusTab({ os }: { os: OrdemServico }) {
             Atualizar status
           </Button>
         </div>
+      </CardBody>
+    </Card>
+  );
+}
+
+const HISTORICO_TIPO_LABEL: Record<string, string> = {
+  CRIACAO: "Criação",
+  STATUS_CHANGE: "Alteração de status",
+  PRODUTO_CHANGE: "Alteração de produtos",
+  DADOS_CHANGE: "Alteração de dados",
+};
+
+function HistoricoTab({ osId }: { osId: string }) {
+  const historicoQ = useQuery({
+    queryKey: ["order-historico", osId],
+    queryFn: async () =>
+      (await api.get<OrdemServicoHistorico[]>(`/orders/${osId}/historico`))
+        .data,
+  });
+
+  if (historicoQ.isPending)
+    return (
+      <Card>
+        <CardBody>
+          <p className="text-sm text-slate-500">Carregando histórico…</p>
+        </CardBody>
+      </Card>
+    );
+
+  const items = historicoQ.data ?? [];
+
+  return (
+    <Card>
+      <CardBody>
+        {items.length === 0 ? (
+          <p className="py-4 text-center text-sm text-slate-500">
+            Nenhum registro de histórico.
+          </p>
+        ) : (
+          <ol className="relative border-l border-slate-200">
+            {items.map((h) => (
+              <li key={h.id} className="mb-6 ml-4">
+                <div className="absolute -left-1.5 mt-1.5 h-3 w-3 rounded-full border border-white bg-brand-600" />
+                <time className="mb-1 flex items-center gap-1 text-xs text-slate-500">
+                  <Clock className="h-3 w-3" />
+                  {formatDateTime(h.createdAt)}
+                </time>
+                <p className="text-sm font-semibold text-slate-700">
+                  {HISTORICO_TIPO_LABEL[h.tipo] ?? h.tipo}
+                </p>
+                <p className="text-sm text-slate-600">{h.descricao}</p>
+              </li>
+            ))}
+          </ol>
+        )}
       </CardBody>
     </Card>
   );
