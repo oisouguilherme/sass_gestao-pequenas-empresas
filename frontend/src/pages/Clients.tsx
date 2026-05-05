@@ -1,9 +1,10 @@
 import { useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, History } from "lucide-react";
 import { toast } from "sonner";
 import { api, extractErrorMessage } from "@/lib/api";
-import type { Cliente, Paginated } from "@/lib/types";
+import type { Cliente, OrdemServico, Paginated, Venda } from "@/lib/types";
+import { formatBRL, formatDate } from "@/lib/format";
 import { useAuth } from "@/contexts/AuthContext";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Button } from "@/components/ui/Button";
@@ -39,6 +40,9 @@ export default function ClientsPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Cliente | null>(null);
   const [form, setForm] = useState<ClientForm>(empty);
+  const [historicoCliente, setHistoricoCliente] = useState<Cliente | null>(
+    null,
+  );
 
   const clientsQ = useQuery({
     queryKey: ["clients", page, search],
@@ -171,6 +175,14 @@ export default function ClientsPage() {
                 <Button
                   size="sm"
                   variant="ghost"
+                  onClick={() => setHistoricoCliente(c)}
+                  aria-label="Histórico"
+                >
+                  <History className="h-4 w-4" />
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
                   onClick={() => openEdit(c)}
                   aria-label="Editar"
                 >
@@ -262,6 +274,121 @@ export default function ClientsPage() {
           <button type="submit" hidden />
         </form>
       </Modal>
+
+      {/* Modal de histórico do cliente */}
+      <ClienteHistoricoModal
+        cliente={historicoCliente}
+        onClose={() => setHistoricoCliente(null)}
+      />
     </>
+  );
+}
+
+interface ClienteHistorico {
+  vendas: Venda[];
+  ordens: OrdemServico[];
+}
+
+function ClienteHistoricoModal({
+  cliente,
+  onClose,
+}: {
+  cliente: Cliente | null;
+  onClose: () => void;
+}) {
+  const historicoQ = useQuery({
+    queryKey: ["client-historico", cliente?.id],
+    enabled: !!cliente,
+    queryFn: async () =>
+      (await api.get<ClienteHistorico>(`/clients/${cliente!.id}/historico`))
+        .data,
+  });
+
+  const h = historicoQ.data;
+
+  return (
+    <Modal
+      open={!!cliente}
+      onClose={onClose}
+      title={`Histórico — ${cliente?.nome ?? ""}`}
+      footer={
+        <Button variant="outline" onClick={onClose}>
+          Fechar
+        </Button>
+      }
+    >
+      {historicoQ.isPending && (
+        <p className="text-sm text-slate-500">Carregando…</p>
+      )}
+      {h && (
+        <div className="space-y-6">
+          {/* Vendas */}
+          <div>
+            <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-500">
+              Vendas ({h.vendas.length})
+            </h3>
+            {h.vendas.length === 0 ? (
+              <p className="text-sm text-slate-400">Nenhuma venda.</p>
+            ) : (
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-slate-200 text-left text-xs text-slate-500">
+                    <th className="pb-2 pr-3 font-medium">ID</th>
+                    <th className="pb-2 pr-3 font-medium">Data</th>
+                    <th className="pb-2 pr-3 font-medium">Total</th>
+                    <th className="pb-2 font-medium">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {h.vendas.map((v) => (
+                    <tr key={v.id}>
+                      <td className="py-1.5 pr-3 font-mono text-xs text-slate-400">
+                        #{v.id.slice(-6).toUpperCase()}
+                      </td>
+                      <td className="py-1.5 pr-3">{formatDate(v.createdAt)}</td>
+                      <td className="py-1.5 pr-3">{formatBRL(v.valorFinal)}</td>
+                      <td className="py-1.5">{v.status}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+
+          {/* Ordens de serviço */}
+          <div>
+            <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-500">
+              Ordens de serviço ({h.ordens.length})
+            </h3>
+            {h.ordens.length === 0 ? (
+              <p className="text-sm text-slate-400">
+                Nenhuma ordem de serviço.
+              </p>
+            ) : (
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-slate-200 text-left text-xs text-slate-500">
+                    <th className="pb-2 pr-3 font-medium">Nome</th>
+                    <th className="pb-2 pr-3 font-medium">Data</th>
+                    <th className="pb-2 font-medium">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {h.ordens.map((os) => (
+                    <tr key={os.id}>
+                      <td className="py-1.5 pr-3">{os.nome}</td>
+                      <td className="py-1.5 pr-3">
+                        {formatDate(os.createdAt)}
+                      </td>
+                      <td className="py-1.5">{os.status}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
+      )}
+    </Modal>
   );
 }
