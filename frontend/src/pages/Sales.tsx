@@ -1,31 +1,52 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ScanBarcode, Trash2, X } from "lucide-react";
+import { Pencil, ScanBarcode, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { api, extractErrorMessage } from "@/lib/api";
-import type { Paginated, TipoPagamento, Venda } from "@/lib/types";
+import type { Cliente, Paginated, TipoPagamento, Venda } from "@/lib/types";
+import { useAuth } from "@/contexts/AuthContext";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Card, CardBody } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
+import { Modal } from "@/components/ui/Modal";
+import { DataTable, Pagination } from "@/components/ui/DataTable";
 import { formatBRL, formatDate } from "@/lib/format";
 
 export default function SalesPage() {
+  const { user } = useAuth();
   const qc = useQueryClient();
+  const isAdmin = user?.role === "ADMIN";
+
   const [activeSale, setActiveSale] = useState<Venda | null>(null);
   const [codigo, setCodigo] = useState("");
   const [quantidade, setQuantidade] = useState(1);
   const [desconto, setDesconto] = useState("0");
   const [tipoPagamento, setTipoPagamento] = useState<TipoPagamento>("DINHEIRO");
+  const [clienteId, setClienteId] = useState("");
+  const [page, setPage] = useState(1);
+
+  // Modal de edição de venda finalizada
+  const [editModal, setEditModal] = useState<Venda | null>(null);
+  const [editClienteId, setEditClienteId] = useState("");
+  const [editTipoPagamento, setEditTipoPagamento] =
+    useState<TipoPagamento>("DINHEIRO");
+
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Lista as últimas vendas
   const salesQ = useQuery({
-    queryKey: ["sales", "recent"],
+    queryKey: ["sales", "recent", page],
     queryFn: async () =>
-      (await api.get<Paginated<Venda>>("/sales?perPage=10")).data,
+      (await api.get<Paginated<Venda>>(`/sales?perPage=15&page=${page}`)).data,
+  });
+
+  const clientesQ = useQuery({
+    queryKey: ["clients", "all"],
+    queryFn: async () =>
+      (await api.get<Paginated<Cliente>>("/clients?perPage=100")).data,
   });
 
   useEffect(() => {
@@ -33,11 +54,17 @@ export default function SalesPage() {
   }, [activeSale]);
 
   const createMut = useMutation({
-    mutationFn: async () => (await api.post<Venda>("/sales", {})).data,
+    mutationFn: async () =>
+      (
+        await api.post<Venda>("/sales", {
+          ...(clienteId && { clienteId }),
+        })
+      ).data,
     onSuccess: (sale) => {
       setActiveSale(sale);
       setDesconto("0");
       setTipoPagamento("DINHEIRO");
+      setClienteId("");
       qc.invalidateQueries({ queryKey: ["sales"] });
     },
     onError: (e) => toast.error(extractErrorMessage(e)),
@@ -126,6 +153,35 @@ export default function SalesPage() {
     onError: (e) => toast.error(extractErrorMessage(e)),
   });
 
+  const reopenMut = useMutation({
+    mutationFn: async (saleId: string) =>
+      (await api.post<Venda>(`/sales/${saleId}/reabrir`)).data,
+    onSuccess: (sale) => {
+      toast.success("Venda reaberta para edição");
+      setActiveSale(sale);
+      setDesconto(String(Number(sale.desconto)));
+      setTipoPagamento(sale.tipoPagamento ?? "DINHEIRO");
+      qc.invalidateQueries({ queryKey: ["sales"] });
+    },
+    onError: (e) => toast.error(extractErrorMessage(e)),
+  });
+
+  const updateFinalizedMut = useMutation({
+    mutationFn: async ({
+      saleId,
+      data,
+    }: {
+      saleId: string;
+      data: { clienteId?: string | null; tipoPagamento?: TipoPagamento };
+    }) => (await api.patch<Venda>(`/sales/${saleId}/editar`, data)).data,
+    onSuccess: () => {
+      toast.success("Venda atualizada");
+      setEditModal(null);
+      qc.invalidateQueries({ queryKey: ["sales"] });
+    },
+    onError: (e) => toast.error(extractErrorMessage(e)),
+  });
+
   const onAddItem = (e: FormEvent) => {
     e.preventDefault();
     if (!activeSale) return;
@@ -144,6 +200,12 @@ export default function SalesPage() {
       saleId: activeSale.id,
       desconto: Math.max(0, Number(desconto) || 0),
     });
+  };
+
+  const openEdit = (sale: Venda) => {
+    setEditModal(sale);
+    setEditClienteId(sale.clienteId ?? "");
+    setEditTipoPagamento(sale.tipoPagamento ?? "DINHEIRO");
   };
 
   return (
@@ -165,57 +227,172 @@ export default function SalesPage() {
       />
 
       {!activeSale ? (
-        <Card>
-          <div className="border-b border-slate-200 px-6 py-4">
-            <h2 className="font-semibold text-slate-900">Vendas recentes</h2>
-          </div>
-          <CardBody>
-            {salesQ.isLoading ? (
-              <p className="py-6 text-center text-sm text-slate-500">
-                Carregando…
-              </p>
-            ) : (salesQ.data?.data.length ?? 0) === 0 ? (
-              <p className="py-6 text-center text-sm text-slate-500">
-                Nenhuma venda ainda. Clique em <b>Iniciar venda</b>.
-              </p>
-            ) : (
-              <ul className="divide-y divide-slate-200">
-                {salesQ.data?.data.map((s) => (
-                  <li
-                    key={s.id}
-                    className="flex items-center justify-between py-3"
+        <div className="space-y-4">
+          {/* Seletor de cliente + botão iniciar */}
+          <Card>
+            <CardBody className="flex flex-col gap-3 sm:flex-row sm:items-end">
+              <div className="flex-1">
+                <Select
+                  label="Cliente (opcional)"
+                  value={clienteId}
+                  onChange={(e) => setClienteId(e.target.value)}
+                >
+                  <option value="">Sem cliente vinculado</option>
+                  {clientesQ.data?.data.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.nome}
+                      {c.documento ? ` · ${c.documento}` : ""}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+              <Button
+                size="lg"
+                onClick={() => createMut.mutate()}
+                loading={createMut.isPending}
+              >
+                <ScanBarcode className="h-5 w-5" /> Iniciar venda
+              </Button>
+            </CardBody>
+          </Card>
+
+          {/* Tabela de vendas recentes */}
+          <DataTable<Venda>
+            loading={salesQ.isLoading}
+            rows={salesQ.data?.data ?? []}
+            rowKey={(s) => s.id}
+            emptyMessage="Nenhuma venda ainda. Clique em Iniciar venda."
+            columns={[
+              {
+                key: "id",
+                header: "Venda",
+                render: (s) => (
+                  <span className="font-mono text-xs text-slate-500">
+                    #{s.id.slice(-8).toUpperCase()}
+                  </span>
+                ),
+              },
+              {
+                key: "cliente",
+                header: "Cliente",
+                render: (s) =>
+                  s.cliente ? (
+                    <span className="text-sm">{s.cliente.nome}</span>
+                  ) : (
+                    <span className="text-slate-400">—</span>
+                  ),
+              },
+              {
+                key: "itens",
+                header: "Itens",
+                render: (s) => (
+                  <span>
+                    {s.produtos.length} item
+                    {s.produtos.length !== 1 ? "s" : ""}
+                  </span>
+                ),
+              },
+              {
+                key: "valor",
+                header: "Total",
+                render: (s) => (
+                  <span className="font-semibold">
+                    {formatBRL(s.valorFinal)}
+                  </span>
+                ),
+              },
+              {
+                key: "pagamento",
+                header: "Pagamento",
+                render: (s) => s.tipoPagamento ?? "—",
+              },
+              {
+                key: "status",
+                header: "Status",
+                render: (s) => (
+                  <Badge
+                    tone={
+                      s.status === "FINALIZADA"
+                        ? "success"
+                        : s.status === "ABERTA"
+                          ? "info"
+                          : "danger"
+                    }
                   >
-                    <div>
-                      <p className="text-sm font-medium text-slate-900">
-                        Venda #{s.id.slice(-8)}
-                      </p>
-                      <p className="text-xs text-slate-500">
-                        {formatDate(s.createdAt)} · {s.produtos.length} ite
-                        {s.produtos.length === 1 ? "m" : "ns"}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className="font-semibold">
-                        {formatBRL(s.valorFinal)}
-                      </span>
-                      <Badge
-                        tone={
-                          s.status === "FINALIZADA"
-                            ? "success"
-                            : s.status === "ABERTA"
-                              ? "info"
-                              : "danger"
-                        }
+                    {s.status}
+                  </Badge>
+                ),
+              },
+              {
+                key: "data",
+                header: "Data",
+                render: (s) => formatDate(s.createdAt),
+              },
+              {
+                key: "acoes",
+                header: "",
+                className: "text-right",
+                render: (s) => (
+                  <div className="flex justify-end gap-1">
+                    {s.status === "FINALIZADA" && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => openEdit(s)}
+                        aria-label="Editar venda"
+                        title="Editar cliente / pagamento"
                       >
-                        {s.status}
-                      </Badge>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </CardBody>
-        </Card>
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                    )}
+                    {s.status === "FINALIZADA" && isAdmin && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => {
+                          if (
+                            confirm(
+                              "Reabrir esta venda para editar itens? O status voltará para Aberta.",
+                            )
+                          )
+                            reopenMut.mutate(s.id);
+                        }}
+                        loading={reopenMut.isPending}
+                        title="Reabrir para editar itens (Admin)"
+                      >
+                        <ScanBarcode className="h-4 w-4 text-amber-600" />
+                      </Button>
+                    )}
+                    {s.status === "ABERTA" && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => {
+                          setActiveSale(s);
+                          setDesconto(String(Number(s.desconto)));
+                          setTipoPagamento(s.tipoPagamento ?? "DINHEIRO");
+                        }}
+                        title="Continuar venda"
+                      >
+                        <ScanBarcode className="h-4 w-4 text-brand-600" />
+                      </Button>
+                    )}
+                  </div>
+                ),
+              },
+            ]}
+          />
+
+          {salesQ.data && (
+            <Pagination
+              page={salesQ.data.meta.page}
+              perPage={salesQ.data.meta.perPage}
+              total={salesQ.data.meta.total}
+              lastPage={salesQ.data.meta.lastPage}
+              onChange={setPage}
+            />
+          )}
+        </div>
       ) : (
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           {/* Coluna principal: scanner + itens */}
@@ -307,6 +484,19 @@ export default function SalesPage() {
 
           {/* Coluna lateral: resumo + finalização */}
           <div className="space-y-4">
+            {activeSale.cliente && (
+              <Card>
+                <CardBody>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    Cliente
+                  </p>
+                  <p className="mt-1 text-sm font-medium text-slate-900">
+                    {activeSale.cliente.nome}
+                  </p>
+                </CardBody>
+              </Card>
+            )}
+
             <Card>
               <div className="border-b border-slate-200 px-6 py-4">
                 <h2 className="font-semibold text-slate-900">Resumo</h2>
@@ -396,6 +586,78 @@ export default function SalesPage() {
           </div>
         </div>
       )}
+
+      {/* Modal de edição de venda finalizada */}
+      <Modal
+        open={!!editModal}
+        onClose={() => setEditModal(null)}
+        title={`Editar venda #${editModal?.id.slice(-8).toUpperCase() ?? ""}`}
+        footer={
+          <>
+            <Button variant="outline" onClick={() => setEditModal(null)}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={() => {
+                if (!editModal) return;
+                updateFinalizedMut.mutate({
+                  saleId: editModal.id,
+                  data: {
+                    clienteId: editClienteId || null,
+                    tipoPagamento: editTipoPagamento,
+                  },
+                });
+              }}
+              loading={updateFinalizedMut.isPending}
+            >
+              Salvar
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <Select
+            label="Cliente"
+            value={editClienteId}
+            onChange={(e) => setEditClienteId(e.target.value)}
+          >
+            <option value="">Sem cliente vinculado</option>
+            {clientesQ.data?.data.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.nome}
+                {c.documento ? ` · ${c.documento}` : ""}
+              </option>
+            ))}
+          </Select>
+          <Select
+            label="Forma de pagamento"
+            value={editTipoPagamento}
+            onChange={(e) =>
+              setEditTipoPagamento(e.target.value as TipoPagamento)
+            }
+          >
+            <option value="DINHEIRO">Dinheiro</option>
+            <option value="CARTAO">Cartão</option>
+            <option value="PIX">PIX</option>
+            <option value="BOLETO">Boleto</option>
+          </Select>
+          {editModal && (
+            <div className="rounded-lg bg-slate-50 p-3 text-sm text-slate-600">
+              <p>
+                <strong>Total:</strong> {formatBRL(editModal.valorFinal)}
+              </p>
+              <p>
+                <strong>Itens:</strong> {editModal.produtos.length}
+              </p>
+              {isAdmin && (
+                <p className="mt-1 text-xs text-amber-700">
+                  Para editar os itens, use o botão "Reabrir" na listagem.
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+      </Modal>
     </>
   );
 }
