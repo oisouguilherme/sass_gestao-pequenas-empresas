@@ -62,6 +62,8 @@ export interface OrdemServico {
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
+  clienteId: string | null;
+  cliente: { id: string; nome: string } | null;
   usuarios: Array<{
     ordemServicoId: string;
     usuarioId: string;
@@ -74,6 +76,15 @@ export interface OrdemServico {
     quantidade: number;
     produto: Produto;
   }>;
+}
+
+export interface OrdemServicoHistorico {
+  id: string;
+  ordemServicoId: string;
+  usuarioId: string | null;
+  tipo: string;
+  descricao: string;
+  createdAt: string;
 }
 
 export type TipoPagamento = "DINHEIRO" | "CARTAO" | "PIX" | "BOLETO";
@@ -91,6 +102,8 @@ export interface Venda {
   createdAt: string;
   updatedAt: string;
   cancelAt: string | null;
+  clienteId: string | null;
+  cliente: { id: string; nome: string } | null;
   produtos: Array<{
     vendaId: string;
     produtoId: string;
