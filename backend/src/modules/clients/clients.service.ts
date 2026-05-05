@@ -61,3 +61,30 @@ export async function remove(empresaId: string, id: string) {
     data: { deletedAt: new Date() },
   });
 }
+
+export async function getHistorico(empresaId: string, id: string) {
+  await findById(empresaId, id);
+  const [vendas, ordens] = await Promise.all([
+    prisma.venda.findMany({
+      where: { clienteId: id, empresaId },
+      include: {
+        produtos: { include: { produto: true } },
+        usuario: { select: { id: true, nome: true } },
+      },
+      orderBy: { createdAt: "desc" },
+      take: 50,
+    }),
+    prisma.ordemServico.findMany({
+      where: { clienteId: id, empresaId, deletedAt: null },
+      include: {
+        produtos: { include: { produto: true } },
+        usuarios: {
+          include: { usuario: { select: { id: true, nome: true } } },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+      take: 50,
+    }),
+  ]);
+  return { vendas, ordens };
+}

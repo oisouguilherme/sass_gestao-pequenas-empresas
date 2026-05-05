@@ -23,3 +23,7 @@ export async function remove(req: Request, res: Response) {
   await service.remove(req.user!.empresaId, req.params.id);
   res.status(204).send();
 }
+
+export async function getHistorico(req: Request, res: Response) {
+  res.json(await service.getHistorico(req.user!.empresaId, req.params.id));
+}

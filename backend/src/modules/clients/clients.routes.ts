@@ -28,5 +28,6 @@ router.patch(
   asyncHandler(controller.update),
 );
 router.delete("/:id", requireRole("ADMIN"), asyncHandler(controller.remove));
+router.get("/:id/historico", asyncHandler(controller.getHistorico));
 
 export default router;
