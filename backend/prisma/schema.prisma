@@ -147,7 +147,9 @@ model Cliente {
   updatedAt DateTime @updatedAt
   deletedAt DateTime?
 
-  empresa Empresa @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  empresa       Empresa        @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  vendas        Venda[]
+  ordensServico OrdemServico[]
 
   @@index([empresaId])
   @@index([empresaId, nome])
@@ -166,17 +168,35 @@ model OrdemServico {
   pago        Boolean   @default(false)
   deadlineAt  DateTime?
   empresaId   String
+  clienteId   String?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   deletedAt   DateTime?
 
-  empresa   Empresa                @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  empresa   Empresa                  @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  cliente   Cliente?                 @relation(fields: [clienteId], references: [id], onDelete: SetNull)
   usuarios  OrdemServicoUsuario[]
   produtos  OrdemServicoProduto[]
+  historico OrdemServicoHistorico[]
 
   @@index([empresaId])
   @@index([empresaId, status])
+  @@index([clienteId])
   @@map("ordens_servico")
+}
+
+model OrdemServicoHistorico {
+  id             String   @id @default(cuid())
+  ordemServicoId String
+  usuarioId      String?
+  tipo           String
+  descricao      String
+  createdAt      DateTime @default(now())
+
+  ordemServico OrdemServico @relation(fields: [ordemServicoId], references: [id], onDelete: Cascade)
+
+  @@index([ordemServicoId])
+  @@map("ordens_servico_historico")
 }
 
 model OrdemServicoUsuario {
@@ -218,18 +238,21 @@ model Venda {
   status         VendaStatus    @default(ABERTA)
   usuarioId      String
   empresaId      String
+  clienteId      String?
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
-  cancelAt       DateTime?
+  cancelAt       DateTime?      @map("cancelAt")
 
   empresa  Empresa        @relation(fields: [empresaId], references: [id], onDelete: Cascade)
   usuario  Usuario        @relation(fields: [usuarioId], references: [id], onDelete: Restrict)
+  cliente  Cliente?       @relation(fields: [clienteId], references: [id], onDelete: SetNull)
   produtos VendaProduto[]
 
   @@index([empresaId])
   @@index([empresaId, status])
   @@index([empresaId, usuarioId])
   @@index([empresaId, createdAt])
+  @@index([clienteId])
   @@map("vendas")
 }
 
