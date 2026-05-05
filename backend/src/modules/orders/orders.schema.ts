@@ -12,6 +12,7 @@ export const createOrderSchema = z.object({
   descricao: z.string().trim().optional(),
   deadlineAt: z.coerce.date().optional(),
   pago: z.boolean().optional(),
+  clienteId: z.string().cuid().optional(),
   usuarioIds: z.array(z.string().min(1)).optional(),
   produtos: z
     .array(
@@ -28,6 +29,7 @@ export const updateOrderSchema = z.object({
   descricao: z.string().trim().nullable().optional(),
   deadlineAt: z.coerce.date().nullable().optional(),
   pago: z.boolean().optional(),
+  clienteId: z.string().cuid().nullable().optional(),
 });
 
 export const updateStatusSchema = z.object({

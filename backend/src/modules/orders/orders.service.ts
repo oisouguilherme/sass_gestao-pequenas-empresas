@@ -15,6 +15,7 @@ const ORDER_INCLUDE = {
     include: { usuario: { select: { id: true, nome: true, email: true } } },
   },
   produtos: { include: { produto: true } },
+  cliente: { select: { id: true, nome: true } },
 } satisfies Prisma.OrdemServicoInclude;
 
 function buildAccessFilter(
@@ -104,6 +105,16 @@ export async function create(user: AuthenticatedUser, input: CreateOrderInput) {
     include: ORDER_INCLUDE,
   });
 
+  // Registra evento de criação no histórico
+  await prisma.ordemServicoHistorico.create({
+    data: {
+      ordemServicoId: os.id,
+      usuarioId: user.id,
+      tipo: "CRIACAO",
+      descricao: "Ordem de serviço criada",
+    },
+  });
+
   // Notifica assíncronamente cada usuário atribuído na criação
   if (usuarioIds.length)
     notifyAssignedUsers(os.id, usuarioIds).catch(() => undefined);
@@ -116,12 +127,34 @@ export async function update(
   id: string,
   input: UpdateOrderInput,
 ) {
-  await assertOSBelongsToEmpresa(user.empresaId, id);
-  return prisma.ordemServico.update({
+  const before = await assertOSBelongsToEmpresa(user.empresaId, id);
+  const updated = await prisma.ordemServico.update({
     where: { id },
     data: input,
     include: ORDER_INCLUDE,
   });
+
+  const changes: string[] = [];
+  if (input.nome && input.nome !== before.nome)
+    changes.push(`Nome alterado para "${input.nome}"`);
+  if (input.pago !== undefined && input.pago !== before.pago)
+    changes.push(input.pago ? "Marcada como paga" : "Desmarcada como paga");
+  if (input.clienteId !== undefined && input.clienteId !== before.clienteId)
+    changes.push(
+      input.clienteId ? "Cliente vinculado" : "Cliente desvinculado",
+    );
+  if (changes.length) {
+    await prisma.ordemServicoHistorico.create({
+      data: {
+        ordemServicoId: id,
+        usuarioId: user.id,
+        tipo: "DADOS_CHANGE",
+        descricao: changes.join("; "),
+      },
+    });
+  }
+
+  return updated;
 }
 
 export async function updateStatus(
@@ -129,12 +162,25 @@ export async function updateStatus(
   id: string,
   status: OSStatus,
 ) {
-  await assertOSBelongsToEmpresa(user.empresaId, id);
-  return prisma.ordemServico.update({
+  const before = await assertOSBelongsToEmpresa(user.empresaId, id);
+  const updated = await prisma.ordemServico.update({
     where: { id },
     data: { status },
     include: ORDER_INCLUDE,
   });
+
+  if (status !== before.status) {
+    await prisma.ordemServicoHistorico.create({
+      data: {
+        ordemServicoId: id,
+        usuarioId: user.id,
+        tipo: "STATUS_CHANGE",
+        descricao: `Status alterado de "${before.status}" para "${status}"`,
+      },
+    });
+  }
+
+  return updated;
 }
 
 export async function setUsuarios(
@@ -204,7 +250,27 @@ export async function setProdutos(
       : []),
   ]);
 
+  await prisma.ordemServicoHistorico.create({
+    data: {
+      ordemServicoId: id,
+      usuarioId: user.id,
+      tipo: "PRODUTO_CHANGE",
+      descricao:
+        produtos.length > 0
+          ? `Produtos atualizados (${produtos.length} item${produtos.length !== 1 ? "s" : ""})`
+          : "Todos os produtos removidos",
+    },
+  });
+
   return findById(user, id);
+}
+
+export async function getHistorico(user: AuthenticatedUser, id: string) {
+  await assertOSBelongsToEmpresa(user.empresaId, id);
+  return prisma.ordemServicoHistorico.findMany({
+    where: { ordemServicoId: id },
+    orderBy: { createdAt: "desc" },
+  });
 }
 
 export async function remove(user: AuthenticatedUser, id: string) {
@@ -220,9 +286,10 @@ export async function remove(user: AuthenticatedUser, id: string) {
 async function assertOSBelongsToEmpresa(empresaId: string, id: string) {
   const exists = await prisma.ordemServico.findFirst({
     where: { id, empresaId, deletedAt: null },
-    select: { id: true },
+    select: { id: true, nome: true, status: true, pago: true, clienteId: true },
   });
   if (!exists) throw new NotFoundError("Ordem de serviço não encontrada");
+  return exists;
 }
 
 async function ensureUsuariosBelongToEmpresa(

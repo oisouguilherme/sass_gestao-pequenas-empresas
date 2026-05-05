@@ -53,6 +53,7 @@ router.put(
   validate(setProdutosSchema),
   asyncHandler(controller.setProdutos),
 );
+router.get("/:id/historico", asyncHandler(controller.getHistorico));
 router.delete("/:id", requireRole("ADMIN"), asyncHandler(controller.remove));
 
 export default router;

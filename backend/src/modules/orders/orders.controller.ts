@@ -37,6 +37,10 @@ export async function setProdutos(req: Request, res: Response) {
   );
 }
 
+export async function getHistorico(req: Request, res: Response) {
+  res.json(await service.getHistorico(req.user!, req.params.id));
+}
+
 export async function remove(req: Request, res: Response) {
   await service.remove(req.user!, req.params.id);
   res.status(204).send();
