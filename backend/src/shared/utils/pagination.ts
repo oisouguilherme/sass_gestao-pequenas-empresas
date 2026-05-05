@@ -15,6 +15,7 @@ export interface Paginated<T> {
     perPage: number;
     total: number;
     totalPages: number;
+    lastPage: number;
   };
 }
 
@@ -27,12 +28,16 @@ export const paginatedResult = <T>(
   data: T[],
   total: number,
   { page, perPage }: PaginationQuery,
-): Paginated<T> => ({
-  data,
-  meta: {
-    page,
-    perPage,
-    total,
-    totalPages: Math.max(1, Math.ceil(total / perPage)),
-  },
-});
+): Paginated<T> => {
+  const lastPage = Math.max(1, Math.ceil(total / perPage));
+  return {
+    data,
+    meta: {
+      page,
+      perPage,
+      total,
+      totalPages: lastPage,
+      lastPage,
+    },
+  };
+};
