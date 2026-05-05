@@ -12,6 +12,7 @@ import {
   createSaleSchema,
   finalizeSaleSchema,
   setDiscountSchema,
+  updateFinalizedSchema,
 } from "./sales.schema.js";
 
 const router = Router();
@@ -56,6 +57,17 @@ router.post(
   "/:id/cancelar",
   requireRole(...saleRoles),
   asyncHandler(controller.cancel),
+);
+router.post(
+  "/:id/reabrir",
+  requireRole("ADMIN"),
+  asyncHandler(controller.reopen),
+);
+router.patch(
+  "/:id/editar",
+  requireRole("ADMIN"),
+  validate(updateFinalizedSchema),
+  asyncHandler(controller.updateFinalized),
 );
 
 export default router;

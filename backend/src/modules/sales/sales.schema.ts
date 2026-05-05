@@ -8,6 +8,7 @@ export const tipoPagamentoSchema = z.enum([
 ]);
 
 export const createSaleSchema = z.object({
+  clienteId: z.string().cuid().optional(),
   produtos: z
     .array(
       z.object({
@@ -42,6 +43,12 @@ export const finalizeSaleSchema = z.object({
   tipoPagamento: tipoPagamentoSchema,
 });
 
+export const updateFinalizedSchema = z.object({
+  clienteId: z.string().cuid().nullable().optional(),
+  desconto: z.coerce.number().nonnegative().optional(),
+  tipoPagamento: tipoPagamentoSchema.optional(),
+});
+
 export const listSalesQuerySchema = z.object({
   page: z.coerce.number().int().positive().default(1),
   perPage: z.coerce.number().int().positive().max(100).default(20),
@@ -54,3 +61,4 @@ export const listSalesQuerySchema = z.object({
 export type CreateSaleInput = z.infer<typeof createSaleSchema>;
 export type AddItemInput = z.infer<typeof addItemSchema>;
 export type ListSalesQuery = z.infer<typeof listSalesQuerySchema>;
+export type UpdateFinalizedInput = z.infer<typeof updateFinalizedSchema>;

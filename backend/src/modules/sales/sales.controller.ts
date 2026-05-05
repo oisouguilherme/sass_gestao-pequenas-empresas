@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 import * as service from "./sales.service.js";
-import { listSalesQuerySchema } from "./sales.schema.js";
+import { listSalesQuerySchema, updateFinalizedSchema } from "./sales.schema.js";
 
 export async function list(req: Request, res: Response) {
   const query = listSalesQuerySchema.parse(req.query);
@@ -39,4 +39,13 @@ export async function finalize(req: Request, res: Response) {
 
 export async function cancel(req: Request, res: Response) {
   res.json(await service.cancel(req.user!, req.params.id));
+}
+
+export async function reopen(req: Request, res: Response) {
+  res.json(await service.reopen(req.user!, req.params.id));
+}
+
+export async function updateFinalized(req: Request, res: Response) {
+  const input = updateFinalizedSchema.parse(req.body);
+  res.json(await service.updateFinalized(req.user!, req.params.id, input));
 }

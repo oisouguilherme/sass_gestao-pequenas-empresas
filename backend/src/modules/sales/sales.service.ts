@@ -12,11 +12,13 @@ import type {
   AddItemInput,
   CreateSaleInput,
   ListSalesQuery,
+  UpdateFinalizedInput,
 } from "./sales.schema.js";
 
 const SALE_INCLUDE = {
   produtos: { include: { produto: true } },
   usuario: { select: { id: true, nome: true, email: true } },
+  cliente: { select: { id: true, nome: true } },
 } satisfies Prisma.VendaInclude;
 
 export async function list(user: AuthenticatedUser, query: ListSalesQuery) {
@@ -62,6 +64,7 @@ export async function create(user: AuthenticatedUser, input: CreateSaleInput) {
       empresaId: user.empresaId,
       usuarioId: user.id,
       desconto: new Prisma.Decimal(input.desconto ?? 0),
+      ...(input.clienteId && { clienteId: input.clienteId }),
     },
   });
 
@@ -199,6 +202,53 @@ export async function cancel(user: AuthenticatedUser, vendaId: string) {
     where: { id: vendaId },
     data: { status: "CANCELADA", cancelAt: new Date() },
   });
+  return findById(user, vendaId);
+}
+
+export async function reopen(user: AuthenticatedUser, vendaId: string) {
+  const venda = await prisma.venda.findFirst({
+    where: { id: vendaId, empresaId: user.empresaId },
+  });
+  if (!venda) throw new NotFoundError("Venda não encontrada");
+  if (venda.status === "CANCELADA")
+    throw new ConflictError("Venda cancelada não pode ser reaberta");
+  if (venda.status === "ABERTA")
+    throw new ConflictError("Venda já está aberta");
+
+  await prisma.venda.update({
+    where: { id: vendaId },
+    data: { status: "ABERTA", tipoPagamento: null },
+  });
+  return findById(user, vendaId);
+}
+
+export async function updateFinalized(
+  user: AuthenticatedUser,
+  vendaId: string,
+  input: UpdateFinalizedInput,
+) {
+  const venda = await prisma.venda.findFirst({
+    where: { id: vendaId, empresaId: user.empresaId },
+  });
+  if (!venda) throw new NotFoundError("Venda não encontrada");
+
+  await prisma.venda.update({
+    where: { id: vendaId },
+    data: {
+      ...(input.clienteId !== undefined && { clienteId: input.clienteId }),
+      ...(input.tipoPagamento !== undefined && {
+        tipoPagamento: input.tipoPagamento,
+      }),
+      ...(input.desconto !== undefined && {
+        desconto: new Prisma.Decimal(input.desconto),
+      }),
+    },
+  });
+
+  if (input.desconto !== undefined) {
+    await recalcAndPersist(vendaId);
+  }
+
   return findById(user, vendaId);
 }
 
