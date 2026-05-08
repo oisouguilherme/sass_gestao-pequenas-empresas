@@ -5,10 +5,13 @@ import * as authService from "./auth.service.js";
 const REFRESH_COOKIE = "sg_refresh";
 
 function setRefreshCookie(res: Response, token: string, expiresAt: Date) {
+  // Em produção, frontend e backend ficam em domínios distintos (vercel.app é Public Suffix),
+  // então o cookie deve ser sameSite=none + secure para ser enviado cross-site.
+  const isProd = env.NODE_ENV === "production";
   res.cookie(REFRESH_COOKIE, token, {
     httpOnly: true,
-    secure: env.NODE_ENV === "production",
-    sameSite: env.NODE_ENV === "production" ? "strict" : "lax",
+    secure: isProd,
+    sameSite: isProd ? "none" : "lax",
     path: "/auth",
     expires: expiresAt,
   });

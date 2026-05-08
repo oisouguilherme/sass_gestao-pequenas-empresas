@@ -21,12 +21,24 @@ export function createApp(): Express {
   app.disable("x-powered-by");
 
   app.use(helmet());
-  app.use(
-    cors({
-      origin: true,
-      credentials: true,
-    }),
-  );
+
+  const allowedOrigins = env.CORS_ORIGIN.split(",").map((o) => o.trim());
+  const corsOptions: cors.CorsOptions = {
+    origin: (origin, callback) => {
+      // Permite requests sem origin (ex: mobile apps, Postman, server-to-server)
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(null, false);
+      }
+    },
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  };
+  app.use(cors(corsOptions));
+  // Responde explicitamente ao preflight OPTIONS em todas as rotas
+  app.options("*", cors(corsOptions));
   app.use(express.json({ limit: "1mb" }));
   app.use(cookieParser());
   app.use(morgan(env.NODE_ENV === "production" ? "combined" : "dev"));
