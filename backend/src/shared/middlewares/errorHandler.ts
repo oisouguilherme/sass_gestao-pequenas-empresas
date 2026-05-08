@@ -14,6 +14,13 @@ export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
     return;
   }
 
+  // CORS errors (status set by cors middleware origin callback)
+  const statusFromErr = (err as { status?: number }).status;
+  if (statusFromErr === 403) {
+    res.status(403).json({ message: err.message, code: "FORBIDDEN" });
+    return;
+  }
+
   if (err instanceof ZodError) {
     res.status(422).json({
       message: "Erro de validação",
